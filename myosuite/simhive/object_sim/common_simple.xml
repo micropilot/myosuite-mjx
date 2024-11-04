@@ -1,0 +1,32 @@
+<mujoco>
+    <compiler angle="radian" />
+
+    <!-- Define approximate colors directly on each geometry where needed -->
+    <asset>
+        <!-- Materials can be ignored as JAX frameworks typically don't support material properties in the same way -->
+        <!-- However, color and transparency can be added directly to each geom -->
+    </asset>
+
+    <worldbody>
+        <!-- Replace the plane with a thin box to simulate a floor -->
+        <geom type="box" rgba="0.1 0.1 0.1 1" size="1 1 0.01" pos="0 0 -0.06"/>
+
+        <!-- Example object replacement for "grab" and "object_col" classes -->
+        <body name="grab_object" pos="0 0 0.1">
+            <!-- Replace "mesh" with an approximated box -->
+            <geom type="box" size="0.05 0.05 0.05" rgba="0.8 0.2 0.2 1.0" friction="1 0.5 0.01"/>
+            <joint name="grab_joint" type="free" damping="0.001" armature="0.001" frictionloss="0.001" />
+        </body>
+
+        <body name="object_col" pos="0.2 0 0.1">
+            <!-- Replace "mesh" with another approximated shape -->
+            <geom type="sphere" size="0.05" rgba="0.3 0.4 0.5 1" friction="1 0.5 0.01" density="1250"/>
+            <joint name="object_col_joint" type="free" damping="0.001" armature="0.001" frictionloss="0.001" />
+        </body>
+    </worldbody>
+
+    <visual>
+        <!-- Camera and global visual settings are often ignored or set differently in JAX-based frameworks -->
+        <global fovy="25" />
+    </visual>
+</mujoco>

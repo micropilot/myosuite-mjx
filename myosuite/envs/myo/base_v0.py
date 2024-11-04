@@ -11,10 +11,6 @@ import numpy as np
 from myosuite.envs import env_base
 from myosuite.envs.myo.fatigue import CumulativeFatigue
 
-from myosuite.envs import env_base
-from myosuite.envs.myo.fatigue import CumulativeFatigue
-
-
 class BaseV0(env_base.MujocoEnv):
 
     MYO_CREDIT = """\

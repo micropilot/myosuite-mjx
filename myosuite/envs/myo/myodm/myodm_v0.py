@@ -15,8 +15,6 @@ from myosuite.envs.myo.base_v0 import BaseV0
 from myosuite.logger.reference_motion import ReferenceMotion
 from myosuite.utils import gym
 from myosuite.utils.quat_math import euler2quat, mat2quat, quat2euler, quatDiff2Vel
-from myosuite.utils import gym
-from myosuite.utils.quat_math import euler2quat, mat2quat, quat2euler, quatDiff2Vel
 
 # ToDo
 # - change target to reference
