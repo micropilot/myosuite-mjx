@@ -20,7 +20,8 @@ class BimanualReachV0(BaseV0):
     DEFAULT_OBS_KEYS = ["time", "myohand_qpos", "myohand_qvel", "pros_hand_qpos", "pros_hand_qvel", "touching_body"]
 
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
-        "reach_dist": -.1,
+        "thumb_reach_dist": -.1,
+        "pinkie_reach_dist": -.1,
         "act": 0,
         # "fin_dis": -0.5,
         # "fin_open": -1,
@@ -39,9 +40,8 @@ class BimanualReachV0(BaseV0):
                frame_skip: int = 10,
                arm_start=np.array([-0.4, -0.25, 1.05]),  # Start and goal centers, pos = center + shift * [0, 1]
                mpl_start=np.array([0.4, -0.25, 1.05]),
-               max_force=1500,  # Max force against throwing
 
-               proximity_th=0.17,  # Proximity threshold for success
+               proximity_th=0.01,  # Proximity threshold for success
 
                arm_start_shifts=np.array([0.055, 0.055, 0]),
                mpl_start_shifts=np.array([0.098, 0.098, 0]),
@@ -160,11 +160,14 @@ class BimanualReachV0(BaseV0):
         obs_dict['fin4'] = sim.data.site_xpos[self.fin4]
 
         obs_dict["Rpalm_pos"] = (sim.data.site_xpos[self.Rpalm1_sid] + sim.data.site_xpos[self.Rpalm2_sid]) / 2
+        obs_dict["Rpalm_thumb"] = sim.data.site_xpos[self.Rpalm1_sid]
+        obs_dict["Rpalm_pinky"] = sim.data.site_xpos[self.Rpalm2_sid]
 
         obs_dict['MPL_ori'] = mat2euler(np.reshape(self.sim.data.site_xmat[self.Rpalm1_sid], (3, 3)))
         obs_dict['MPL_ori_err'] = obs_dict['MPL_ori'] - np.array([np.pi, 0, np.pi])
 
-        obs_dict["reach_err"] = obs_dict["palm_pos"] - obs_dict["Rpalm_pos"]
+        obs_dict["thumb_reach_err"] = obs_dict["fin0"] - obs_dict["Rpalm_thumb"]
+        obs_dict["pinkie_reach_err"] = obs_dict["fin4"] - obs_dict["Rpalm_pinky"]
 
         if sim.model.na > 0:
             obs_dict["act"] = sim.data.act[:].copy()
@@ -173,24 +176,21 @@ class BimanualReachV0(BaseV0):
 
     def get_reward_dict(self, obs_dict):
 
-        reach_dist = np.abs(np.linalg.norm(obs_dict['reach_err'], axis=-1))
-        act = np.linalg.norm(obs_dict['act'], axis=-1) / self.sim.model.na if self.sim.model.na != 0 else 0
-        palm_pos = obs_dict["palm_pos"][0][0] if obs_dict["palm_pos"].ndim == 3 else obs_dict["palm_pos"]
-        rpalm_pos = obs_dict["Rpalm_pos"][0][0] if obs_dict["Rpalm_pos"].ndim == 3 else obs_dict["Rpalm_pos"]
-
-        goal_dis = np.array(
-            [[np.abs(np.linalg.norm(palm_pos - rpalm_pos, axis=-1))]])
+        thumb_reach_dist = np.abs(np.linalg.norm(obs_dict['thumb_reach_err'], axis=-1))[0][0]
+        pinkie_reach_dist = np.abs(np.linalg.norm(obs_dict['pinkie_reach_err'], axis=-1))[0][0]
+        act = np.linalg.norm(obs_dict['act'], axis=-1)[0][0] / self.sim.model.na if self.sim.model.na != 0 else 0
 
         rwd_dict = collections.OrderedDict(
             (
                 # Optional Keys
-                ("reach_dist", reach_dist + np.log(reach_dist + 1e-6)),
+                ("thumb_reach_dist", thumb_reach_dist + np.log(thumb_reach_dist + 1e-6)),
+                ("pinkie_reach_dist", pinkie_reach_dist + np.log(pinkie_reach_dist + 1e-6)),
                 ("act", act),
                 # Must keys
                 ("sparse", 0),
-                ("goal_dist", goal_dis),
-                ("solved", reach_dist < self.proximity_th),
-                ("done", self._get_done(reach_dist)),
+                ("goal_dist", thumb_reach_dist + pinkie_reach_dist),
+                ("solved", (thumb_reach_dist < self.proximity_th) & (pinkie_reach_dist < self.proximity_th)),
+                ("done", self._get_done(thumb_reach_dist, pinkie_reach_dist)),
             )
         )
 
@@ -200,10 +200,10 @@ class BimanualReachV0(BaseV0):
 
         return rwd_dict
 
-    def _get_done(self, z):
+    def _get_done(self, z1, z2):
         if self.obs_dict['time'] > MAX_TIME:
             return 1  
-        elif z < self.proximity_th:
+        elif z1 < self.proximity_th and z2 < self.proximity_th:
             self.obs_dict['time'] = MAX_TIME
             return 1
         elif self.rwd_dict and self.rwd_dict['solved']:
