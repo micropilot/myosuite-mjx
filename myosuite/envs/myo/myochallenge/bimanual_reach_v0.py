@@ -179,6 +179,8 @@ class BimanualReachV0(BaseV0):
         thumb_reach_dist = np.abs(np.linalg.norm(obs_dict['thumb_reach_err'], axis=-1))[0][0]
         pinkie_reach_dist = np.abs(np.linalg.norm(obs_dict['pinkie_reach_err'], axis=-1))[0][0]
         act = np.linalg.norm(obs_dict['act'], axis=-1)[0][0] / self.sim.model.na if self.sim.model.na != 0 else 0
+        arm_height = obs_dict["palm_pos"][-1] - self.arm_start[-1]
+        mpl_height = obs_dict["Rpalm_pos"][-1] - self.mpl_start[-1]
 
         rwd_dict = collections.OrderedDict(
             (
