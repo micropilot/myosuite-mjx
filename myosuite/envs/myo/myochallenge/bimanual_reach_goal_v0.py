@@ -2,6 +2,7 @@ import collections
 import enum
 import os, time
 
+from dm_control.utils import rewards
 from scipy.spatial.transform import Rotation as R
 import mujoco
 from myosuite.utils import gym
@@ -16,20 +17,13 @@ GOAL_CONTACT = 10
 MAX_TIME = 10.0
 
 
-class BimanualReachV0(BaseV0):
+class BimanualReachGoalV0(BaseV0):
     DEFAULT_OBS_KEYS = ["time", "myohand_qpos", "myohand_qvel", "pros_hand_qpos", "pros_hand_qvel", "touching_body"]
 
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
-        "thumb_reach_dist": -.1,
-        "pinkie_reach_dist": -.1,
-        "arm_height": -0.1,
-        "mpl_height": -0.1,
         "act": 0,
-        # "fin_dis": -0.5,
-        # "fin_open": -1,
-        # "lift_height": 2,
-        # "pass_err": -1,
-        # "lift_bonus": 1,
+        "arm_goal_dist": -0.6,  # Penalizes distance from the goal
+        "mpl_goal_dist": -0.4,  # Penalizes distance from the goal
     }
 
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):
@@ -42,11 +36,12 @@ class BimanualReachV0(BaseV0):
                frame_skip: int = 10,
                arm_start=np.array([-0.4, -0.25, 1.05]),  # Start and goal centers, pos = center + shift * [0, 1]
                mpl_start=np.array([0.4, -0.25, 1.05]),
-
-               proximity_th=0.01,  # Proximity threshold for success
+               goal_center=np.array([0.0, 0.15, 0.95]),
+               proximity_th=0.005,  # Proximity threshold for success
 
                arm_start_shifts=np.array([0.055, 0.055, 0]),
                mpl_start_shifts=np.array([0.055, 0.055, 0]),
+               goal_shifts=np.array([0.098, 0.098, 0]),
 
                task_choice='fixed',  # fixed/ random
                obs_keys: list = DEFAULT_OBS_KEYS,
@@ -61,15 +56,18 @@ class BimanualReachV0(BaseV0):
         # start position centers (before changes)
         self.arm_start = arm_start
         self.mpl_start = mpl_start
+        self.goal_center = goal_center
 
         self.arm_start_shifts = arm_start_shifts
         self.mpl_start_shifts = mpl_start_shifts
+        self.goal_shifts = goal_shifts
         self.PILLAR_HEIGHT = 1.09
 
         self.id_info = IdInfo(self.sim.model)
 
         self.start_left_bid = self.id_info.start_left_id
         self.start_right_bid = self.id_info.start_right_id
+        self.goal_bid = self.id_info.goal_id
 
         # define the palm and tip site id.
         # arm
@@ -87,9 +85,11 @@ class BimanualReachV0(BaseV0):
 
         self.arm_start_pos = self.arm_start
         self.mpl_start_pos = self.mpl_start
+        self.goal_pos = self.goal_center
 
         self.sim.model.body_pos[self.start_left_bid] = self.arm_start_pos
         self.sim.model.body_pos[self.start_right_bid] = self.mpl_start_pos
+        self.sim.model.body_pos[self.goal_bid] = self.goal_pos
 
         # check whether the object experience force over max force
         self.TARGET_GOAL_TOUCH = GOAL_CONTACT
@@ -143,6 +143,7 @@ class BimanualReachV0(BaseV0):
         # One more joint for qpos due to </freejoint>
         obs_dict["arm_start_pos"] = self.arm_start_pos
         obs_dict["mpl_start_pos"] = self.mpl_start_pos
+        obs_dict["goal_pos"] = self.goal_pos
         obs_dict["elbow_fle"] = self.sim.data.joint('elbow_flexion').qpos.copy()
 
         this_model = sim.model
@@ -168,9 +169,6 @@ class BimanualReachV0(BaseV0):
         obs_dict['MPL_ori'] = mat2euler(np.reshape(self.sim.data.site_xmat[self.Rpalm1_sid], (3, 3)))
         obs_dict['MPL_ori_err'] = obs_dict['MPL_ori'] - np.array([np.pi, 0, np.pi])
 
-        obs_dict["thumb_reach_err"] = obs_dict["fin0"] - obs_dict["Rpalm_thumb"]
-        obs_dict["pinkie_reach_err"] = obs_dict["fin4"] - obs_dict["Rpalm_pinky"]
-
         if sim.model.na > 0:
             obs_dict["act"] = sim.data.act[:].copy()
 
@@ -178,25 +176,25 @@ class BimanualReachV0(BaseV0):
 
     def get_reward_dict(self, obs_dict):
 
-        thumb_reach_dist = np.abs(np.linalg.norm(obs_dict['thumb_reach_err'], axis=-1))[0][0]
-        pinkie_reach_dist = np.abs(np.linalg.norm(obs_dict['pinkie_reach_err'], axis=-1))[0][0]
         act = np.linalg.norm(obs_dict['act'], axis=-1)[0][0] / self.sim.model.na if self.sim.model.na != 0 else 0
-        arm_height = abs(obs_dict["palm_pos"][0][0][-1] - 0.25)
-        mpl_height = abs(obs_dict["Rpalm_pos"][0][0][-1] - 0.25)
+
+        arm_goal_dist = np.abs(np.linalg.norm(obs_dict["fin0"] - obs_dict["goal_pos"], axis=-1))[0][0]
+        mpl_goal_dist = np.abs(np.linalg.norm(obs_dict["Rpalm_thumb"] - obs_dict["goal_pos"], axis=-1))[0][0]
+        
+        # elbow_err = 5 * np.exp(-10 * (obs_dict['elbow_fle'][0] - 1.) ** 2) - 5
 
         rwd_dict = collections.OrderedDict(
             (
                 # Optional Keys
-                ("thumb_reach_dist", thumb_reach_dist + np.log(thumb_reach_dist + 1e-6)),
-                ("pinkie_reach_dist", pinkie_reach_dist + np.log(pinkie_reach_dist + 1e-6)),
-                ("arm_height", arm_height),
-                ("mpl_height", mpl_height),
                 ("act", act),
+                ("arm_goal_dist", arm_goal_dist),
+                ("mpl_goal_dist", mpl_goal_dist),
+                # ("lift_bonus", elbow_err),
                 # Must keys
                 ("sparse", 0),
-                ("goal_dist", thumb_reach_dist + pinkie_reach_dist),
-                ("solved", (thumb_reach_dist < self.proximity_th) & (pinkie_reach_dist < self.proximity_th)),
-                ("done", self._get_done(thumb_reach_dist, pinkie_reach_dist)),
+                ("goal_dist", arm_goal_dist + mpl_goal_dist),
+                ("solved", (arm_goal_dist < self.proximity_th) and (mpl_goal_dist < self.proximity_th)),
+                ("done", self._get_done(arm_goal_dist, mpl_goal_dist)),
             )
         )
 
@@ -209,7 +207,7 @@ class BimanualReachV0(BaseV0):
     def _get_done(self, z1, z2):
         if self.obs_dict['time'] > MAX_TIME:
             return 1  
-        elif z1 < self.proximity_th and z2 < self.proximity_th:
+        elif (z1 < self.proximity_th) and (z2 < self.proximity_th):
             self.obs_dict['time'] = MAX_TIME
             return 1
         elif self.rwd_dict and self.rwd_dict['solved']:
@@ -261,6 +259,7 @@ class BimanualReachV0(BaseV0):
     def reset(self, **kwargs):
         self.arm_start_pos = self.arm_start + self.arm_start_shifts * (2 * self.np_random.random(3) - 1)
         self.mpl_start_pos = self.mpl_start + self.mpl_start_shifts * (2 * self.np_random.random(3) - 1)
+        self.goal_pos = self.goal_center + self.goal_shifts * (2 * self.np_random.random(3) - 1)
         #
         self.sim.model.body_pos[self.start_left_bid] = self.arm_start_pos
         self.sim.model.body_pos[self.start_right_bid] = self.mpl_start_pos
@@ -285,7 +284,8 @@ class ObjLabels(enum.Enum):
     PROSTH = 1
     ARM_START = 2
     MPL_START = 3
-    ENV = 4
+    GOAL = 4
+    ENV = 5
 
 class ContactTrajIssue(enum.Enum):
     MYO_SHORT = 0
@@ -319,6 +319,7 @@ class IdInfo:
 
         self.start_left_id = model.body("start_left").id
         self.start_right_id = model.body("start_right").id
+        self.goal_id = model.body("goal").id
 
 
 def get_touching_objects(model: mujoco.MjModel, data: mujoco.MjData, id_info: IdInfo):
@@ -334,10 +335,12 @@ def body_id_to_label(body_id, id_info: IdInfo):
         return ObjLabels.MYO
     elif id_info.prosth_body_range[0] <= body_id <= id_info.prosth_body_range[1]:
         return ObjLabels.PROSTH
-    elif body_id == id_info.start_id:
+    elif body_id == id_info.start_left_id:
         return ObjLabels.ARM_START
-    elif body_id == id_info.goal_id:
+    elif body_id == id_info.start_right_id:
         return ObjLabels.MPL_START
+    elif body_id == id_info.goal_id:
+        return ObjLabels.GOAL
     else:
         return ObjLabels.ENV
 

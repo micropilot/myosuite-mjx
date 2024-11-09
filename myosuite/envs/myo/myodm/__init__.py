@@ -97,7 +97,7 @@ MyoHand_task_spec = (
     task_spec(name='MyoHandCubelargePass-v0', robot='MyoHand', object='cubelarge', motion='MyoHand_cubelarge_pass1.npz'),
     task_spec(name='MyoHandCubemediumLInspect-v0', robot='MyoHand', object='cubemedium', motion='MyoHand_cubemedium_inspect1.npz'),
     task_spec(name='MyoHandMousePass-v0', robot='MyoHand', object='mouse', motion='MyoHand_mouse_pass1.npz'),
-    task_spec(name='MyoHandCubesmallLift-v0', robot='MyoHand', object='cubesmall', motion='MyoHand_cubesmall_lift.npz'),
+    # task_spec(name='MyoHandCubesmallLift-v0', robot='MyoHand', object='cubesmall', motion='MyoHand_cubesmall_lift.npz'),
     task_spec(name='MyoHandTorusmediumPass-v0', robot='MyoHand', object='torusmedium', motion='MyoHand_torusmedium_pass1.npz'),
     task_spec(name='MyoHandMugPass-v0', robot='MyoHand', object='mug', motion='MyoHand_mug_pass1.npz'),
     task_spec(name='MyoHandPiggybankPass-v0', robot='MyoHand', object='wineglass', motion='MyoHand_piggybank_pass1.npz'),
@@ -129,6 +129,16 @@ def register_myohand_object_trackref(task_name, object_name, motion_path=None):
 for task_name, robot_name, object_name, motion_path in MyoHand_task_spec:
     register_myohand_object_trackref(task_name, object_name, motion_path)
 
+
+register(id='MyoHandCubesmallLift-v0',
+        entry_point='myosuite.envs.myo.myodm.myodm_cube_grasp_v0:MyoHandCubeLiftEnv',
+        max_episode_steps=1000,
+        kwargs={
+                'model_path': '/../assets/hand/myohand_object.xml',
+                'object_name': "cubesmall",
+                'reference':curr_dir+'/data/'+motion_path,
+        }
+    )
 
 OBJECTS = ('airplane','alarmclock','apple','banana','binoculars','bowl','camera','coffeemug','cubelarge','cubemedium','cubesmall','cup','cylinderlarge','cylindermedium','cylindersmall','duck','elephant','eyeglasses','flashlight','flute','gamecontroller','hammer','hand','headphones','knife','lightbulb','mouse','mug','phone','piggybank', 'pyramidlarge','pyramidmedium','pyramidsmall','scissors','spherelarge','spheremedium','spheresmall','stamp','stanfordbunny','stapler','teapot','toothbrush','toothpaste','toruslarge','torusmedium','torussmall','train','watch','waterbottle','wineglass')
 
