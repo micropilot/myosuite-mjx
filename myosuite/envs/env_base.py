@@ -138,7 +138,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
         # observation = self.reset()
         assert not done, "Check initialization. Simulation starts in a done state."
         self.observation_space = gym.spaces.Box(obs_range[0]*np.ones(observation.size), obs_range[1]*np.ones(observation.size), dtype=np.float32)
-
+        
         return
 
 
@@ -332,6 +332,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
             self.visual_dict = self.get_visuals(sim=self.sim_obsd)
 
         # recoved observation vector from the obs_dict
+        print (self.obs_dict, self.obs_keys)
         t, obs = self.obsdict2obsvec(self.obs_dict, self.obs_keys)
         return obs
 

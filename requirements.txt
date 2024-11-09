@@ -6,9 +6,12 @@ termcolor
 flatten_dict
 h5py
 numpy
-mujoco==3.1.2
-dm-control==1.0.16
+mujoco==3.1.6
+mujoco-mjx==3.1.6
+dm-control==1.0.20
 Pillow
 pink-noise-rl
 packaging
 gitpython
+gymnax==0.0.8
+brax==0.9.4
