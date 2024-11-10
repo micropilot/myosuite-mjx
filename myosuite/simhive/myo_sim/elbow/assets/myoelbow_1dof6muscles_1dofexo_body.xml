@@ -26,12 +26,12 @@
         <site name="BICshort-P2" pos="-0.0071 -0.04 0.1451"></site>
 
         <body name="r_humerus" pos="-0.017545 -0.007 0.17" quat="1.0 0.0 0.0 0.0">
-          <geom type="cylinder" pos="0 -.1 0" size=".04 .04" rgba=".3 .3 .3 1" euler="1.57 0 0" mass=".1"/>
+          <geom type="cylinder"  contype="0" conaffinity="0" pos="0 -.1 0" size=".04 .04" rgba=".3 .3 .3 1" euler="1.57 0 0" mass=".1"/>
           <geom type="box" pos="0.005 -.2 0.04" size=".012 .004 .1" rgba=".3 .3 .3 1" euler="1.6 0.03 0" mass=".01"/>
           <geom name="arm_r_humerus" type="mesh" mesh="arm_r_humerus"></geom>
           <geom name="TRIlonghh_wrap" type="sphere" size="0.03" pos="0.0068 0.00 0.0034" euler="3.00162 -0.853466 2.57419" rgba=".5 .5 .9 .4" group="2"></geom>
           <geom name="BIClonghh_wrap" type="sphere" size="0.025" pos="-0.001 -0.0008 0.0012" euler="0 0 0" rgba=".5 .5 .9 .4" group="2"></geom>
-          <geom name="TRI_wrap" type="cylinder" size="0.016 0.025" pos="0.0028 -0.2919 -0.0069" euler="-0.14015 -0.00628319 0.154985" rgba=".5 .5 .9 .4" group="2"></geom>
+          <geom name="TRI_wrap" type="cylinder"  contype="0" conaffinity="0" size="0.016 0.025" pos="0.0028 -0.2919 -0.0069" euler="-0.14015 -0.00628319 0.154985" rgba=".5 .5 .9 .4" group="2"></geom>
           <inertial pos="0 -0.180496 0" mass="1.864572" fullinertia="0.01481 0.004551 0.013193 0 0 0"></inertial>
           <site name="TRIlong-P2" pos="-0.0271 -0.1144 -0.0066"></site>
           <site name="TRIlong-P3" pos="-0.0318 -0.2264 -0.0122"></site>
@@ -65,9 +65,9 @@
 
           <!--joint name="r_shoulder_elev" type="hinge" pos="0 0 0" axis="-0.058898 0.0023 0.998261" limited="true" range="-1.5708 3.14159" ref="0"></joint-->
           <body name="r_ulna_radius_hand" pos="0.0061 -0.2904 -0.0123" quat="1.0 0.0 0.0 0.0">
-            <geom type="cylinder" pos="0 -.12 0.035" size=".03 .03" rgba=".3 .3 .3 1" euler="1.3 0 0" mass=".1"/>
+            <geom type="cylinder"  contype="0" conaffinity="0" pos="0 -.12 0.035" size=".03 .03" rgba=".3 .3 .3 1" euler="1.3 0 0" mass=".1"/>
             <geom type="box" pos="0 -.05 0.06" size=".01 .004 .06" rgba=".3 .3 .3 1" euler="1.3 0 0" mass=".01"/>
-            <geom type="cylinder" pos="0 0 0.05" size=".02 .01" rgba=".32 .32 .32 1" euler="0 0 0" mass=".001"/>
+            <geom type="cylinder"  contype="0" conaffinity="0" pos="0 0 0.05" size=".02 .01" rgba=".32 .32 .32 1" euler="0 0 0" mass=".001"/>
 
             <geom name="arm_r_ulna" type="mesh" mesh="arm_r_ulna"></geom>
             <geom name="arm_r_radius" type="mesh" mesh="arm_r_radius"></geom>

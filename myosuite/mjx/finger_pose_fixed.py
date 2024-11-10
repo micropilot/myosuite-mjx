@@ -3,7 +3,7 @@ import mujoco
 from jax import numpy as jp 
 
 from brax.envs.base import Env, MjxEnv, State 
-from myosuite.envs.utils import perturbed_pipeline_step
+from myosuite.mjx.utils import perturbed_pipeline_step
 
 class MyoFingerPoseFixedJAX(MjxEnv):
 
@@ -49,9 +49,7 @@ class MyoFingerPoseFixedJAX(MjxEnv):
                 self.tip_sids.append(mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SITE, site))
                 self.target_sids.append(mujoco.mj_name2id(self.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"))
 
-        kwargs['n_frames'] = kwargs.get(
-        'n_frames', 5)
-        kwargs['backend'] = 'mjx'
+        kwargs['n_frames'] = kwargs.get('n_frames', 5)
 
         super().__init__(model=self.mj_model, **kwargs)
 
@@ -174,39 +172,39 @@ class MyoFingerPoseFixedJAX(MjxEnv):
         )
 
 
-from PIL import Image
-from matplotlib import pyplot as plt
-import matplotlib.animation as animation
+# from PIL import Image
+# from matplotlib import pyplot as plt
+# import matplotlib.animation as animation
 
-# Function to update the animation
-def update(img):
-    plt.clf()
-    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
-    plt.margins(0,0)
-    plt.imshow(img)
-    plt.axis('off')
+# # Function to update the animation
+# def update(img):
+#     plt.clf()
+#     plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
+#     plt.margins(0,0)
+#     plt.imshow(img)
+#     plt.axis('off')
 
 
-env = MyoFingerPoseFixedJAX()
-# Reset the environment to get initial state
-mj_model, mj_data = env.mj_model, env.mj_data 
-renderer = mujoco.Renderer(mj_model)
+# env = MyoFingerPoseFixedJAX()
+# # Reset the environment to get initial state
+# mj_model, mj_data = env.mj_model, env.mj_data 
+# renderer = mujoco.Renderer(mj_model)
 
-# enable joint visualization option:
-scene_option = mujoco.MjvOption()
-scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
+# # enable joint visualization option:
+# scene_option = mujoco.MjvOption()
+# scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
 
-def get_image():
-    mujoco.mj_resetData(mj_model, mj_data)
-    while True:
-        mujoco.mj_step(mj_model, mj_data)
-        renderer.update_scene(mj_data, scene_option=scene_option)
-        img = renderer.render()
+# def get_image():
+#     mujoco.mj_resetData(mj_model, mj_data)
+#     while True:
+#         mujoco.mj_step(mj_model, mj_data)
+#         renderer.update_scene(mj_data, scene_option=scene_option)
+#         img = renderer.render()
 
-        yield img
+#         yield img
 
-fig = plt.figure(figsize=(6, 6))
-ani = animation.FuncAnimation(fig, update, frames=get_image(), interval=20)
-plt.show()
+# fig = plt.figure(figsize=(6, 6))
+# ani = animation.FuncAnimation(fig, update, frames=get_image(), interval=20)
+# plt.show()
     
 
