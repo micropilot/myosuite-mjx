@@ -43,6 +43,7 @@ register_env_with_variants(id='myoChallengeBimanual-v0',
             'obj_friction_change': (0.1, 0.001, 0.00002)  # nominal: 1.0, 0.005, 0.0001
         }
     )
+    
 
 register_env_with_variants(id='myoReachBimanual-v0',
         entry_point='myosuite.envs.myo.myochallenge.bimanual_reach_v0:BimanualReachV0',
