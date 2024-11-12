@@ -136,7 +136,7 @@ register(id='MyoHandCubesmallLift-v0',
         kwargs={
                 'model_path': '/../assets/hand/myohand_object.xml',
                 'object_name': "cubesmall",
-                'reference':curr_dir+'/data/'+motion_path,
+                'reference':curr_dir+'/data/MyoHand_cubesmall_lift.npz',
         }
     )
 

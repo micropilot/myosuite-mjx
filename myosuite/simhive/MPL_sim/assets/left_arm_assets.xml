@@ -1,5 +1,5 @@
 <mujocoinclude>
-    <compiler angle="radian" meshdir="../" texturedir='../scenes/' convexhull="false"/>
+    <compiler angle="radian" meshdir="../" texturedir='../scenes/' />
     <size nconmax="1000" njmax="5000"/>
     <option timestep="0.002"/>
 

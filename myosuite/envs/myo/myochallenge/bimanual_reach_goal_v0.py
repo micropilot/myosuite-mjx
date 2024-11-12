@@ -73,6 +73,7 @@ class BimanualReachGoalV0(BaseV0):
         # arm
         self.palm_sid = self.sim.model.site_name2id('S_grasp')
         self.init_palm_z = self.sim.data.site_xpos[self.palm_sid][-1]
+        
         self.fin0 = self.sim.model.site_name2id("THtip")
         self.fin1 = self.sim.model.site_name2id("IFtip")
         self.fin2 = self.sim.model.site_name2id("MFtip")
@@ -87,6 +88,7 @@ class BimanualReachGoalV0(BaseV0):
         self.mpl_start_pos = self.mpl_start
         self.goal_pos = self.goal_center
 
+        print (self.sim.model.qpos0.shape, self.sim.model.body_pos.shape, self.start_left_bid)
         self.sim.model.body_pos[self.start_left_bid] = self.arm_start_pos
         self.sim.model.body_pos[self.start_right_bid] = self.mpl_start_pos
         self.sim.model.body_pos[self.goal_bid] = self.goal_pos

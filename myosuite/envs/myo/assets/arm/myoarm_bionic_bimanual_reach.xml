@@ -9,14 +9,14 @@
 
 
   <include file="../../../../simhive/myo_sim/arm/assets/myoarm_assets.xml"/>
-  <include file="../../../../simhive/myo_sim/scene/myosuite_scene.xml"/>
+  <!-- <include file="../../../../simhive/myo_sim/scene/myosuite_scene.xml"/> -->
 
   <include file='../../../../simhive/MPL_sim/assets/left_arm_assets.xml'/>
   <include file='../../../../simhive/MPL_sim/assets/handL_assets.xml'/>
 
   <compiler autolimits = "true" inertiafromgeom="auto" angle="radian" balanceinertia="true" boundmass="0.001" boundinertia=".0001"  meshdir='../../../../simhive/myo_sim' texturedir='../../../../simhive/myo_sim/'/>
   <option timestep="0.002">
-    <flag multiccd="enable"/>
+    <flag multiccd="disable"/>
   </option>
 
   <visual>
@@ -43,7 +43,7 @@
   <worldbody>
 
     <!-- ======= Human ======= -->
-    <geom name="body" type="mesh" mesh="body_nohand" euler="0 0 3.14" contype="0" conaffinity="0"/>
+    <!-- <geom name="body" type="mesh" mesh="body_nohand" euler="0 0 3.14" contype="0" conaffinity="0"/> -->
     <body name="full_body" pos="-.025 0.1 1.40">
       <include file="../../../../simhive/myo_sim/arm/assets/myoarm_body.xml"/>
     </body>
