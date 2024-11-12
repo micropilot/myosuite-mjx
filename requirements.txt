@@ -1,17 +1,17 @@
 click
 sk-video
 # gym==0.13 # default to this stable point if caught in gym/gymnasium issues
-gymnasium==0.29.1
+#gymnasium==0.29.1
 termcolor
 flatten_dict
 h5py
 numpy
-mujoco==3.2.5
-mujoco-mjx==3.2.5
+#mujoco==3.2.5
+#mujoco-mjx==3.2.5
 dm-control==1.0.25
 Pillow
 pink-noise-rl
 packaging
 gitpython
-gymnax==0.0.8
-brax==0.9.4
+#gymnax==0.0.8
+#brax==0.9.4

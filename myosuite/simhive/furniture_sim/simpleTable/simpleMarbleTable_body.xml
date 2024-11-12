@@ -9,7 +9,7 @@
 
     <!-- simpleMarbleTable -©vk©-->
     <body name="simpleMarbleTable" pos="0 0 0" childclass="body_simpleTable" >
-        <geom class="viz_simpleMarbleTable" type="box" size=".7 .375 .025" pos="0 0 0.735"/>
+        <geom class="viz_simpleMarbleTable" type="box" size=".7 .375 .025" pos="0 0 0.735" />
         <geom class="viz_simpleMarbleTable" rgba=".2 .1 .1 1" type="box" size="0.59 0.26 .05" pos="0 0 0.66"/>
         <geom class="viz_simpleMarbleTable" rgba=".2 .1 .1 1" type="box" size="0.025 0.025 0.305" pos="-0.565 0.235 0.305"/>
         <geom class="viz_simpleMarbleTable" rgba=".2 .1 .1 1" type="box" size="0.025 0.025 0.305" pos="-0.565 -0.235 0.305"/>

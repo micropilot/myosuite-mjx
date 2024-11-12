@@ -1,6 +1,5 @@
 import jax
 from jax import numpy as jp
-import numpy as np
 from flax.training import orbax_utils
 from flax import struct
 from matplotlib import pyplot as plt
@@ -53,8 +52,8 @@ class ElbowPose1D6MRandom(PipelineEnv):
         for jnt_name, jnt_range in target_jnt_range.items():
             self.target_jnt_ids.append(mujoco.mj_name2id(mj_model, mujoco.mjtObj.mjOBJ_JOINT, jnt_name))
             self.target_jnt_range.append(jnt_range)
-        self.target_jnt_range = np.array(self.target_jnt_range)
-        self.target_jnt_value = np.mean(self.target_jnt_range, axis=1)  # pseudo targets for init
+        self.target_jnt_range = jp.array(self.target_jnt_range)
+        self.target_jnt_value = jp.mean(self.target_jnt_range, axis=1)  # pseudo targets for init
 
     def reset(self, rng: jp.ndarray) -> State:
         """Resets the environment to an initial state."""
