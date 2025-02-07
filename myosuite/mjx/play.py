@@ -32,20 +32,25 @@ camera = mujoco.MjvCamera()
 camera.lookat[:] = [0.2, -0.2, 1]  # Adjust lookat point
 camera.azimuth = 30  # Adjust azimuth (horizontal rotation)
 camera.elevation = -45  # Adjust elevation (vertical angle)
-camera.distance = 1.1  # Adjust distance from the scene
+camera.distance = 1.2  # Adjust distance from the scene
 
 # Simulation parameters
 duration = 3.8  # (seconds)
 framerate = 60  # (Hz)
 
+jit_step = jax.jit(mjx.step)
+
 frames = []
 mujoco.mj_resetData(mj_model, mj_data)
-while mj_data.time < duration:
-    mujoco.mj_step(mj_model, mj_data)
-    if len(frames) < mj_data.time * framerate:
-        renderer.update_scene(mj_data, scene_option=scene_option, camera=camera)
-        pixels = renderer.render()
-        frames.append(pixels)
+mjx_data = mjx.put_data(mj_model, mj_data)
+while mjx_data.time < duration:
+  mjx_data = jit_step(mjx_model, mjx_data)
+  if len(frames) < mjx_data.time * framerate:
+    mj_data = mjx.get_data(mj_model, mjx_data)
+    renderer.update_scene(mj_data, scene_option=scene_option, camera=camera)
+    pixels = renderer.render()
+    frames.append(pixels)
+     
 
 mediapy.write_video("myohand_mjx.mp4", frames, fps=framerate)
 
