@@ -3,7 +3,7 @@ import jax
 from jax import lax
 
 # Constants for floating-point precision
-_FLOAT_EPS = jp.finfo(jp.float64).eps
+_FLOAT_EPS = jp.finfo(jp.float32).eps
 _EPS4 = _FLOAT_EPS * 4.0
 
 def mulQuat(qa, qb):
@@ -38,14 +38,14 @@ def axis_angle2quat(axis, angle):
     return jp.array([c, s * axis[0], s * axis[1], s * axis[2]])
 
 def euler2mat(euler):
-    euler = jp.asarray(euler, dtype=jp.float64)
+    euler = jp.asarray(euler, dtype=jp.float32)
     ai, aj, ak = -euler[..., 2], -euler[..., 1], -euler[..., 0]
     si, sj, sk = jp.sin(ai), jp.sin(aj), jp.sin(ak)
     ci, cj, ck = jp.cos(ai), jp.cos(aj), jp.cos(ak)
     cc, cs = ci * ck, ci * sk
     sc, ss = si * ck, si * sk
 
-    mat = jp.empty(euler.shape[:-1] + (3, 3), dtype=jp.float64)
+    mat = jp.empty(euler.shape[:-1] + (3, 3), dtype=jp.float32)
     mat = mat.at[..., 2, 2].set(cj * ck)
     mat = mat.at[..., 2, 1].set(sj * sc - cs)
     mat = mat.at[..., 2, 0].set(sj * cc + ss)
@@ -58,14 +58,14 @@ def euler2mat(euler):
     return mat
 
 def euler2quat(euler):
-    euler = jp.asarray(euler, dtype=jp.float64)
+    euler = jp.asarray(euler, dtype=jp.float32)
     ai, aj, ak = euler[..., 2] / 2, -euler[..., 1] / 2, euler[..., 0] / 2
     si, sj, sk = jp.sin(ai), jp.sin(aj), jp.sin(ak)
     ci, cj, ck = jp.cos(ai), jp.cos(aj), jp.cos(ak)
     cc, cs = ci * ck, ci * sk
     sc, ss = si * ck, si * sk
 
-    quat = jp.empty(euler.shape[:-1] + (4,), dtype=jp.float64)
+    quat = jp.empty(euler.shape[:-1] + (4,), dtype=jp.float32)
     quat = quat.at[..., 0].set(cj * cc + sj * ss)
     quat = quat.at[..., 3].set(cj * sc - sj * cs)
     quat = quat.at[..., 2].set(-(cj * ss + sj * cc))
@@ -73,22 +73,22 @@ def euler2quat(euler):
     return quat
 
 def mat2euler(mat):
-    mat = jp.asarray(mat, dtype=jp.float64)
+    mat = jp.asarray(mat, dtype=jp.float32)
     cy = jp.sqrt(mat[..., 2, 2] * mat[..., 2, 2] + mat[..., 1, 2] * mat[..., 1, 2])
     condition = cy > _EPS4
-    euler = jp.empty(mat.shape[:-2] + (3,), dtype=jp.float64)
+    euler = jp.empty(mat.shape[:-2] + (3,), dtype=jp.float32)
     euler = euler.at[..., 2].set(jp.where(condition, -jp.arctan2(mat[..., 0, 1], mat[..., 0, 0]), -jp.arctan2(-mat[..., 1, 0], mat[..., 1, 1])))
     euler = euler.at[..., 1].set(jp.where(condition, -jp.arctan2(-mat[..., 0, 2], cy), -jp.arctan2(-mat[..., 0, 2], cy)))
     euler = euler.at[..., 0].set(jp.where(condition, -jp.arctan2(mat[..., 1, 2], mat[..., 2, 2]), 0.0))
     return euler
 
 def mat2quat(mat):
-    mat = jp.asarray(mat, dtype=jp.float64)
+    mat = jp.asarray(mat, dtype=jp.float32)
     Qxx, Qyx, Qzx = mat[..., 0, 0], mat[..., 0, 1], mat[..., 0, 2]
     Qxy, Qyy, Qzy = mat[..., 1, 0], mat[..., 1, 1], mat[..., 1, 2]
     Qxz, Qyz, Qzz = mat[..., 2, 0], mat[..., 2, 1], mat[..., 2, 2]
     
-    K = jp.zeros(mat.shape[:-2] + (4, 4), dtype=jp.float64)
+    K = jp.zeros(mat.shape[:-2] + (4, 4), dtype=jp.float32)
     K = K.at[..., 0, 0].set(Qxx - Qyy - Qzz)
     K = K.at[..., 1, 0].set(Qyx + Qxy)
     K = K.at[..., 1, 1].set(Qyy - Qxx - Qzz)
@@ -113,7 +113,7 @@ def quat2euler(quat):
     return mat2euler(quat2mat(quat))
 
 def quat2mat(quat):
-    quat = jp.asarray(quat, dtype=jp.float64)
+    quat = jp.asarray(quat, dtype=jp.float32)
     w, x, y, z = quat[..., 0], quat[..., 1], quat[..., 2], quat[..., 3]
     Nq = jp.sum(quat * quat, axis=-1)
     s = 2.0 / Nq
@@ -122,7 +122,7 @@ def quat2mat(quat):
     xX, xY, xZ = x * X, x * Y, x * Z
     yY, yZ, zZ = y * Y, y * Z, z * Z
 
-    mat = jp.empty(quat.shape[:-1] + (3, 3), dtype=jp.float64)
+    mat = jp.empty(quat.shape[:-1] + (3, 3), dtype=jp.float32)
     mat = mat.at[..., 0, 0].set(1.0 - (yY + zZ))
     mat = mat.at[..., 0, 1].set(xY - wZ)
     mat = mat.at[..., 0, 2].set(xZ + wY)
