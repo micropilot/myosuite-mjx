@@ -176,8 +176,8 @@ class TrackEnv(PipelineEnv):
     def reset(self, rng):
         step_counter = 0 
 
-        qpos = self.q_pos_init.copy()
-        qvel = self.q_vel_init.copy()
+        qpos = self.init_qpos.copy()
+        qvel = self.init_qvel.copy()
         
         rng, subkey = jax.random.split(rng)
         self.ref.reset()
@@ -185,7 +185,7 @@ class TrackEnv(PipelineEnv):
         reward, done, zero = jp.zeros(3)
         data = self.pipeline_init(qpos, qvel)
 
-        obs = self._get_obs(data.data)
+        obs = self._get_obs(data)
 
         state = State(
                         data, 
@@ -311,7 +311,7 @@ class TrackEnv(PipelineEnv):
         action = self.unnorm_action(action)
 
         data = perturbed_pipeline_step(self.sys, state.pipeline_state, action, xfrc_applied, self._n_frames)
-        observation = self._get_obs(data.data, state.info['target_left'], state.info['target_right'])
+        observation = self._get_obs(data, state.info['target_left'], state.info['target_right'])
 
         reward, terminated, rwd_dict = self.compute_reward(data)
 
