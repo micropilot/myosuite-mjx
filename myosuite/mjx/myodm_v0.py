@@ -201,8 +201,8 @@ class TrackEnv(PipelineEnv):
                             'total_successes': 0.
                         }
                     )
-        info = self.get_info(state, data)
-        state.info.update(**info)
+        
+        # state.info.update(**info)
         return state
 
     def unnorm_action(self, action):
