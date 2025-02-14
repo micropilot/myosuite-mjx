@@ -2,12 +2,9 @@ import os
 import time 
 import jax
 from jax import numpy as jp
-from matplotlib import pyplot as plt
 
 import mujoco
-from mujoco import mjx
 
-from brax import base
 from brax.io import mjcf
 from brax.envs.base import PipelineEnv, State
 
@@ -182,31 +179,21 @@ class TrackEnv(PipelineEnv):
         rng, subkey = jax.random.split(rng)
         self.ref.reset()
 
+        pipeline_state = self.pipeline_init(qpos, qvel)
+        obs = self._get_obs(pipeline_state)
+
         reward, done, zero = jp.zeros(3)
-        data = self.pipeline_init(qpos, qvel)
 
-        obs = self._get_obs(data)
+        metrics = {
+                    'pose': zero, 
+                    'object': zero, 
+                    'bonus': zero,
+                    'penalty': zero,
+                    }
 
-        state = State(
-                        data, 
-                        obs,  
-                        done, 
-                        {'reward': zero}, 
-                        {
-                            'rng': rng,
-                            'step_counter': step_counter,
-                            'last_xfrc_applied': jp.zeros((self.sys.nbody, 6)),
-                            'success': 0.,
-                            'success_left': 0.,
-                            'total_successes': 0.
-                        }
-                    )
+        state = State(pipeline_state, obs, reward, done, metrics)
         
-        # state.info.update(**info)
         return state
-
-    def unnorm_action(self, action):
-        return (action + 1) / 2 * (self.high_action - self.low_action) + self.low_action
 
     def norm2(self, x):
         return jp.sum(jp.square(x))
@@ -279,9 +266,7 @@ class TrackEnv(PipelineEnv):
                     'object': obj_reward + base_reward, 
                     'bonus': self.lift_bonus_mag * lift_bonus,
                     'penalty': terminated,
-                    'sparse': jp.array([0]),
-                    'solved': jp.array([0]),
-                    'done': self.initialized_pos and terminated}
+                    }
         
         rwd_dict["dense"] = jp.sum(
             [wt * rwd_dict[key] for key, wt in self.reward_weights_dict.items()], axis=0
@@ -292,42 +277,20 @@ class TrackEnv(PipelineEnv):
     def step(self, state: State, action: jp.ndarray) -> State:
         """Runs one timestep of the environment's dynamics."""
 
-        apply_every = 1
-        hold_for = 1
-        magnitude = 1
+        # Scale action from [-1,1] to actuator limits
+        action_min = self.sys.actuator.ctrl_range[:, 0]
+        action_max = self.sys.actuator.ctrl_range[:, 1]
+        action = (action + 1) * (action_max - action_min) * 0.5 + action_min
 
-        # Reset the applied forces every 200 steps
-        rng, subkey = jax.random.split(state.info['rng'])
-        xfrc_applied = jp.zeros((self.sys.nbody, 6))
-        xfrc_applied = jax.lax.cond(
-            state.info['step_counter'] % apply_every == 0,
-            lambda _: jax.random.normal(subkey, shape=(self.sys.nbody, 6)) * magnitude,
-            lambda _: state.info['last_xfrc_applied'], operand=None)
-        # Reset to 0 every 50 steps
-        perturb = jax.lax.cond(
-            state.info['step_counter'] % apply_every < hold_for, lambda _: 1, lambda _: 0, operand=None)
-        xfrc_applied = xfrc_applied * perturb
+        pipeline_state = self.pipeline_step(state.pipeline_state, action)
+        obs = self._get_obs(pipeline_state, action)
 
-        action = self.unnorm_action(action)
-
-        data = perturbed_pipeline_step(self.sys, state.pipeline_state, action, xfrc_applied, self._n_frames)
-        observation = self._get_obs(data, state.info['target_left'], state.info['target_right'])
-
-        reward, terminated, rwd_dict = self.compute_reward(data)
+        reward, terminated, rwd_dict = self.compute_reward(pipeline_state)
 
         state.metrics.update(
-            reward=reward
+            **rwd_dict
         )
-        state.info.update(
-            rng=rng,
-            step_counter=state.info['step_counter'] + 1,
-            last_xfrc_applied=xfrc_applied,
-        )
-        state.info.update(**rwd_dict)
-
-        return state.replace(
-            pipeline_state=data, obs=observation, reward=reward, done=terminated
-        )
+        return state.replace(pipeline_state=pipeline_state, obs=obs, reward=reward)
 
     def _get_obs(
             self, data
@@ -337,7 +300,8 @@ class TrackEnv(PipelineEnv):
                 data.qvel,
             )
         )
-    
+
+
 
 # dof_robot = 29
 # model_path = '/../envs/myo/assets/hand/myohand_object.xml'
