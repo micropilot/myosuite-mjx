@@ -365,7 +365,7 @@ def main(_):
         'DIMO': dimO,
         "SAVE_FOLDER": save_folder,
         "LR": 3e-4, 
-        "NUM_ENVS": 32, 
+        "NUM_ENVS": 8, 
         "NUM_STEPS": 16, 
         "TOTAL_TIMESTEPS": 4e9,
         "UPDATE_EPOCHS": 4, 
