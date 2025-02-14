@@ -16,5 +16,4 @@ gitpython
 gymnax
 brax
 torch
-jax
-jaxlib
+tensorboard
