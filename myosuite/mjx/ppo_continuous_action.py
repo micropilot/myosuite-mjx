@@ -358,7 +358,7 @@ def main(_):
 
     env_name = "TrackEnv"  # "h1_reach_continual" or "h1_reach_continual_two_hands"
     dimU = 39
-    dimO = 88
+    dimO = 70
 
     config = {
         'DIMU': dimU,
