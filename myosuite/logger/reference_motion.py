@@ -264,3 +264,10 @@ class ReferenceMotion():
 
     def __repr__(self) -> str:
         return self.reference.__repr__()
+
+
+# ref = ReferenceMotion(reference_data="myosuite/envs/myo/myodm/data/MyoHand_airplane_fly1.npz")
+# print ('horizon:', ref.horizon)
+# robot_init, object_init = ref.get_init()
+# print ('robot_init:', robot_init)
+# print ('object_init:', object_init)

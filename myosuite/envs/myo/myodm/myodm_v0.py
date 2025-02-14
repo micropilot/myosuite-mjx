@@ -360,3 +360,12 @@ class TrackEnv(BaseV0):
         return (
             obj_term or qpos_term or base_term
         )  # combining termination for object + posture
+
+
+from myosuite.utils import gym
+env = gym.make('MyoHandAirplaneFly-v0')
+env.reset()
+env.step(env.action_space.sample())
+
+
+

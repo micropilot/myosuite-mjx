@@ -1,6 +1,7 @@
 import enum
 from typing import Union
 import collections
+import numpy as np
 from jax import numpy as jp
 import jax
 import jax.random as jrandom
@@ -31,7 +32,12 @@ class ReferenceType(enum.Enum):
 
 # Reference motion
 class ReferenceMotion():
-    def __init__(self, reference_data: Union[str, dict], motion_extrapolation: bool = False, rng_key=None):
+    def __init__(
+            self, 
+            reference_data: Union[str, dict], 
+            motion_extrapolation: bool = False, 
+            rng_key=None
+        ):
         """
         Reference Type
             Fixed  :: N==1, M==1  :: input is <Fixed target dict>
@@ -44,7 +50,6 @@ class ReferenceMotion():
 
         # load reference
         self.reference = self.load(reference_data)
-
         # check reference for format
         self.check_format(self.reference)
         self.reference['time'] = jp.around(self.reference['time'], _TIME_PRECISION)  # round to help with comparisons
@@ -120,7 +125,7 @@ class ReferenceMotion():
         reference.setdefault('object_init', reference['object'][0] if 'object' in reference else None)
 
         return ReferenceStruct(
-            time=reference['time'],
+            time=jp.array(reference['time']),
             robot=reference.get('robot'),
             robot_vel=reference.get('robot_vel'),
             object=reference.get('object'),
@@ -186,3 +191,10 @@ class ReferenceMotion():
 
     def __repr__(self) -> str:
         return repr(self.reference)
+
+
+# ref = ReferenceMotion(reference_data="myosuite/envs/myo/myodm/data/MyoHand_airplane_fly1.npz")
+# print ('horizon:', ref.horizon)
+# robot_init, object_init = ref.get_init()
+# print ('robot_init:', robot_init)
+# print ('object_init:', object_init)
