@@ -35,8 +35,7 @@ class ReferenceMotion():
     def __init__(
             self, 
             reference_data: Union[str, dict], 
-            motion_extrapolation: bool = False, 
-            rng_key=None
+            motion_extrapolation: bool = False
         ):
         """
         Reference Type
@@ -46,7 +45,7 @@ class ReferenceMotion():
         """
 
         self.motion_extrapolation = motion_extrapolation
-        self.rng_key = rng_key or jrandom.PRNGKey(0)
+        self.rng_key = jrandom.PRNGKey(0)
 
         # load reference
         self.reference = self.load(reference_data)
