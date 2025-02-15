@@ -236,12 +236,12 @@ class TrackEnv(PipelineEnv):
             qpos_term = self.norm2(hand_qpos_err) >= self.qpos_fail_thresh
             qpos_term = jp.where(qpos_term, 1, 0)  # Convert to integer
 
-        done = (obj_term + qpos_term + base_term) > 0
+        done = jp.float32((obj_term + qpos_term + base_term) > 0)
 
         metrics = { 'pose': jp.float32(pose_reward + vel_reward), 
                     'object': jp.float32(obj_reward + base_reward), 
                     'bonus': jp.float32(self.lift_bonus_mag * lift_bonus),
-                    'penalty': jp.float32(done),
+                    'penalty': done,
                     }
         
         reward = jp.sum(
