@@ -238,10 +238,10 @@ class TrackEnv(PipelineEnv):
 
         done = (obj_term + qpos_term + base_term) > 0
 
-        metrics = { 'pose': pose_reward + vel_reward, 
-                    'object': obj_reward + base_reward, 
-                    'bonus': self.lift_bonus_mag * lift_bonus,
-                    'penalty': done,
+        metrics = { 'pose': jp.float32(pose_reward + vel_reward), 
+                    'object': jp.float32(obj_reward + base_reward), 
+                    'bonus': jp.float32(self.lift_bonus_mag * lift_bonus),
+                    'penalty': jp.float32(done),
                     }
         
         reward = jp.sum(
