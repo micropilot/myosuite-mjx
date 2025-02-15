@@ -37,6 +37,14 @@ env = TrackEnv(model_path=model_path,
                reference=reference,)
 
 
+
+times = [datetime.now()]
+
+def progress(num_steps, metrics):
+  times.append(datetime.now())
+  print(f'time_spent: {times[-2] - times[-1]}')
+  print (metrics)
+
 train_fn = functools.partial(ppo.train, 
                              num_timesteps=2_000_000, 
                              num_evals=20, 
@@ -57,3 +65,6 @@ train_fn = functools.partial(ppo.train,
 
 
 make_inference_fn, params, _ = train_fn(environment=env)
+
+print(f'time to jit: {times[1] - times[0]}')
+print(f'time to train: {times[-1] - times[1]}')
