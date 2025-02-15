@@ -88,7 +88,7 @@ class TrackEnv(PipelineEnv):
         self.ref = ReferenceMotion(
             reference_data=reference,
             motion_extrapolation=motion_extrapolation,
-            rng_key=seed,
+            rng_key=jax.random.PRNGKey(seed),
         )
 
         self.motion_start_time = motion_start_time
