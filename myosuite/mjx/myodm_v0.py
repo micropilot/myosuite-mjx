@@ -1,5 +1,6 @@
 import os 
 import time 
+from tqdm import tqdm
 import jax
 from jax import numpy as jp
 
@@ -35,7 +36,12 @@ class TrackEnv(PipelineEnv):
         # Load model and setup simulation
         processed_model_path = self.__process_path(object_name, model_path)
         mj_model = mujoco.MjModel.from_xml_path(processed_model_path)
-        sys = mjcf.load_model(mj_model)
+        mj_model.opt.solver = mujoco.mjtSolver.mjSOL_NEWTON
+        mj_model.opt.iterations = 100
+        mj_model.opt.ls_iterations = 50
+        mj_model.opt.timestep = 0.002
+        
+        sys = mjcf.load_model(mj_model) 
 
         physics_steps_per_control_step = 5
         kwargs['n_frames'] = kwargs.get(
@@ -250,7 +256,7 @@ class TrackEnv(PipelineEnv):
         curr_ref = self.ref.get_reference(pipeline_state0.time + self.motion_start_time)   
         # if curr_ref.object is not None:
         #     # Create a new instance of the system with updated site_pos
-        #     print (type(self.sys.site_pos), type(curr_ref.object[:3]))
+        #     # print (type(self.sys.site_pos), type(curr_ref.object[:3]))
         #     new_site_pos = self.sys.site_pos.at[self.target_sid].set(curr_ref.object[:3])
         #     # Assuming self.sys is a dataclass, create a new instance with updated site_pos
         #     self.sys = self.sys.replace(site_pos=new_site_pos)
@@ -280,35 +286,36 @@ class TrackEnv(PipelineEnv):
 
 
 
-# dof_robot = 29
-# model_path = '/../envs/myo/assets/hand/myohand_object.xml'
-# object_name = 'airplane'
-# reference =  {'time':(0.0, 4.0),
-#             'robot':jp.zeros((2, dof_robot)),
-#             'robot_vel':jp.zeros((2, dof_robot)),
-#             'object_init':jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
-#             'object':jp.array([ [-.2, -.2, 0.1, 1.0, 0.0, 0.0, -1.0],
-#                                 [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0]])
-#             }
+dof_robot = 29
+model_path = '/../envs/myo/assets/hand/myohand_object.xml'
+object_name = 'airplane'
+reference =  {'time':(0.0, 4.0),
+            'robot':jp.zeros((2, dof_robot)),
+            'robot_vel':jp.zeros((2, dof_robot)),
+            'object_init':jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
+            'object':jp.array([ [-.2, -.2, 0.1, 1.0, 0.0, 0.0, -1.0],
+                                [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0]])
+            }
 
-# env = TrackEnv(model_path=model_path, 
-#                object_name=object_name, 
-#                reference=reference,)
-# jit_reset = jax.jit(env.reset)
-# jit_step = jax.jit(env.step)
+# with jax.profiler.trace("/tmp/jax-trace", create_perfetto_link=True):
+#     env = TrackEnv(model_path=model_path, 
+#                 object_name=object_name, 
+#                 reference=reference,)
+#     jit_reset = jax.jit(env.reset)
+#     jit_step = jax.jit(env.step)
 
-# print ("It has been jitted")
+#     print ("It has been jitted")
 
-# # initialize the state
-# state = jit_reset(jax.random.PRNGKey(0))
-# rollout = [state.pipeline_state]
+#     # initialize the state
+#     state = jit_reset(jax.random.PRNGKey(0))
+#     rollout = [state.pipeline_state]
 
-# print ("State initialized")
+#     print ("State initialized")
 
-# # grab a trajectory
-# for i in range(10):
-#   ctrl = -0.1 * jp.ones(env.sys.nu)
-#   state = jit_step(state, ctrl)
-#   rollout.append(state.pipeline_state)
+#     # grab a trajectory
+#     for i in tqdm(range(1000)):
+#         ctrl = -0.1 * jp.ones(env.sys.nu)
+#         state = jit_step(state, ctrl)
+#         rollout.append(state.pipeline_state)
 
-# print ("Trajectory grabbed")
+#     print ("Trajectory grabbed")    

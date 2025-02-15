@@ -123,7 +123,7 @@ class ReferenceMotion():
         assert 'time' in reference.keys(), "Missing key (time) in reference"
         reference.setdefault('robot_init', reference['robot'][0] if 'robot' in reference else None)
         reference.setdefault('object_init', reference['object'][0] if 'object' in reference else None)
-        print (type(reference['time']), type(reference['robot']), type(reference['object']))
+        # print (type(reference['time']), type(reference['robot']), type(reference['object']))
         return ReferenceStruct(
             time=jp.array(reference['time']),
             robot=reference.get('robot'),
