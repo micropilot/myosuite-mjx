@@ -136,12 +136,11 @@ class TrackEnv(PipelineEnv):
             self.init_qpos = self.init_qpos.at[-3:].set(quat2euler(object_init[3:]))
 
     
-    def reset(self, rng):
+    def reset(self, rng):        
         # qpos and qvel contain both hand and object pose and vel
         qpos = self.init_qpos
         qvel = jp.zeros(self.sys.qd_size())
         
-        rng, rng1, rng2 = jax.random.split(rng, 3)
         self.ref.reset()
 
         pipeline_state = self.pipeline_init(qpos, qvel)
@@ -170,15 +169,7 @@ class TrackEnv(PipelineEnv):
 
         return jp.abs(quatDiff2Vel(q2, q1, 1)[0])
     
-    def update_reference_insim(self, curr_ref):
-        if curr_ref.object is not None:
-            # Create a new instance of the system with updated site_pos
-            new_site_pos = self.sys.site_pos.at[self.target_sid].set(curr_ref.object[:3])
-            
-            # Assuming self.sys is a dataclass, create a new instance with updated site_pos
-            self.sys = self.sys.replace(site_pos=new_site_pos)
-    
-    def compute_reward(self, curr_ref,data):
+    def compute_reward(self, curr_ref, data):
         # get current hand pose + vel 
         curr_hand_qpos = data.q[:-6].copy()
         curr_hand_qvel = data.qd[:-6].copy()
@@ -256,8 +247,12 @@ class TrackEnv(PipelineEnv):
 
         # get reference for current time (returns a named tuple)
         pipeline_state0 = state.pipeline_state
-        curr_ref = self.ref.get_reference(pipeline_state0.time + self.motion_start_time)
-        self.update_reference_insim(curr_ref)
+        curr_ref = self.ref.get_reference(pipeline_state0.time + self.motion_start_time)   
+        if curr_ref.object is not None:
+            # Create a new instance of the system with updated site_pos
+            new_site_pos = self.sys.site_pos.at[self.target_sid].set(curr_ref.object[:3])
+            # Assuming self.sys is a dataclass, create a new instance with updated site_pos
+            self.sys = self.sys.replace(site_pos=new_site_pos)
 
         pipeline_state = self.pipeline_step(pipeline_state0, action)
         obs = self._get_obs(pipeline_state)
@@ -284,16 +279,16 @@ class TrackEnv(PipelineEnv):
 
 
 
-# dof_robot = 29
-# model_path = '/../envs/myo/assets/hand/myohand_object.xml'
-# object_name = 'airplane'
-# reference =  {'time':(0.0, 4.0),
-#             'robot':jp.zeros((2, dof_robot)),
-#             'robot_vel':jp.zeros((2, dof_robot)),
-#             'object_init':jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
-#             'object':jp.array([ [-.2, -.2, 0.1, 1.0, 0.0, 0.0, -1.0],
-#                                 [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0]])
-#             }
+dof_robot = 29
+model_path = '/../envs/myo/assets/hand/myohand_object.xml'
+object_name = 'airplane'
+reference =  {'time':(0.0, 4.0),
+            'robot':jp.zeros((2, dof_robot)),
+            'robot_vel':jp.zeros((2, dof_robot)),
+            'object_init':jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
+            'object':jp.array([ [-.2, -.2, 0.1, 1.0, 0.0, 0.0, -1.0],
+                                [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0]])
+            }
 
 # env = TrackEnv(model_path=model_path, 
 #                object_name=object_name, 

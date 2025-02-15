@@ -45,7 +45,6 @@ class ReferenceMotion():
         """
 
         self.motion_extrapolation = motion_extrapolation
-        self.rng_key = jrandom.PRNGKey(0)
 
         # load reference
         self.reference = self.load(reference_data)
@@ -173,7 +172,6 @@ class ReferenceMotion():
             raise ValueError("We shouldn't be in this condition")
 
     def reset(self):
-        """Reset the PRNG key to start conditions."""
         self.index_cache = 0
 
     def get_init(self):
@@ -189,21 +187,21 @@ class ReferenceMotion():
             robot_vel_ref = self.reference['robot_vel'][0]
             object_ref = self.reference['object'][0]
         elif self.type == ReferenceType.RANDOM:
-            self.rng_key, subkey1, subkey2 = jrandom.split(self.rng_key, 3)
+            rng_key, rng1, rng2 = jrandom.split(jax.random.PRNGKey(0), 3)
             robot_ref = jrandom.uniform(
-                subkey1, 
+                rng1, 
                 shape=self.reference['robot'][0, :].shape,  # Specify the shape explicitly
                 minval=self.reference['robot'][0, :], 
                 maxval=self.reference['robot'][1, :]
             )
             robot_vel_ref = jrandom.uniform(
-                subkey2, 
+                rng2, 
                 shape=self.reference['robot_vel'][0, :].shape,  # Specify the shape explicitly
                 minval=self.reference['robot_vel'][0, :], 
                 maxval=self.reference['robot_vel'][1, :]
             )
             object_ref = jrandom.uniform(
-                self.rng_key, 
+                rng_key, 
                 shape= self.reference['object'][0, :].shape, 
                 minval=self.reference['object'][0, :],
                 maxval=self.reference['object'][1, :]
