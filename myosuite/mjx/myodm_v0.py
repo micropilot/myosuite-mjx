@@ -279,16 +279,16 @@ class TrackEnv(PipelineEnv):
 
 
 
-dof_robot = 29
-model_path = '/../envs/myo/assets/hand/myohand_object.xml'
-object_name = 'airplane'
-reference =  {'time':(0.0, 4.0),
-            'robot':jp.zeros((2, dof_robot)),
-            'robot_vel':jp.zeros((2, dof_robot)),
-            'object_init':jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
-            'object':jp.array([ [-.2, -.2, 0.1, 1.0, 0.0, 0.0, -1.0],
-                                [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0]])
-            }
+# dof_robot = 29
+# model_path = '/../envs/myo/assets/hand/myohand_object.xml'
+# object_name = 'airplane'
+# reference =  {'time':(0.0, 4.0),
+#             'robot':jp.zeros((2, dof_robot)),
+#             'robot_vel':jp.zeros((2, dof_robot)),
+#             'object_init':jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
+#             'object':jp.array([ [-.2, -.2, 0.1, 1.0, 0.0, 0.0, -1.0],
+#                                 [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0]])
+#             }
 
 # env = TrackEnv(model_path=model_path, 
 #                object_name=object_name, 

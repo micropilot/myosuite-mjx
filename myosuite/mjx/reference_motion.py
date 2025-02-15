@@ -1,7 +1,6 @@
 import enum
 from typing import Union
 import collections
-import numpy as np
 from jax import numpy as jp
 import jax
 import jax.random as jrandom
@@ -111,7 +110,7 @@ class ReferenceMotion():
         """
         if isinstance(reference_data, str):
             if reference_data.endswith("npz"):
-                reference = {k: v for k, v in np.load(reference_data).items()}
+                reference = {k: v for k, v in jp.load(reference_data).items()}
             elif reference_data.endswith(("pkl", "pickle")):
                 with open(reference_data, 'rb') as data:
                     reference = pickle.load(data)
@@ -161,7 +160,7 @@ class ReferenceMotion():
                 return (self.index_cache, self.index_cache+1)
             else:
                 print(f"No result using hueristic search. Attempting sort match: {time}")
-                self.index_cache = np.searchsorted(self.reference['time'], time, side="right") - 1
+                self.index_cache = jp.searchsorted(self.reference['time'], time, side="right") - 1
                 if time == self.reference['time'][self.index_cache]:
                     return (self.index_cache, self.index_cache)
                 elif time > self.reference['time'][self.index_cache] and time < self.reference['time'][self.index_cache+1]:
