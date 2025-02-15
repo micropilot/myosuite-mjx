@@ -83,11 +83,15 @@ def mat2euler(mat):
     return euler
 
 def mat2quat(mat):
-    mat = jp.asarray(mat, dtype=jp.float32)
+    """ Convert Rotation Matrix to Quaternion using JAX """
+    mat = jp.asarray(mat, dtype=jp.float64)
+    assert mat.shape[-2:] == (3, 3), f"Invalid shape matrix {mat.shape}"
+
     Qxx, Qyx, Qzx = mat[..., 0, 0], mat[..., 0, 1], mat[..., 0, 2]
     Qxy, Qyy, Qzy = mat[..., 1, 0], mat[..., 1, 1], mat[..., 1, 2]
     Qxz, Qyz, Qzz = mat[..., 2, 0], mat[..., 2, 1], mat[..., 2, 2]
-    
+
+    # Fill only the lower half of the symmetric matrix
     K = jp.zeros(mat.shape[:-2] + (4, 4), dtype=jp.float32)
     K = K.at[..., 0, 0].set(Qxx - Qyy - Qzz)
     K = K.at[..., 1, 0].set(Qyx + Qxy)
@@ -101,12 +105,19 @@ def mat2quat(mat):
     K = K.at[..., 3, 3].set(Qxx + Qyy + Qzz)
     K /= 3.0
 
-    def get_largest_eigenvector(K):
-        vals, vecs = jp.linalg.eigh(K)
-        q = vecs[:, jp.argmax(vals)]
-        return jp.where(q[0] < 0, -q, q)
+    # Compute eigenvalues and eigenvectors
+    vals, vecs = jp.linalg.eigh(K)
 
-    q = jax.vmap(get_largest_eigenvector)(K)
+    # Select the largest eigenvector (corresponding to max eigenvalue)
+    max_idx = jp.argmax(vals, axis=-1)
+    q = jp.take_along_axis(vecs, max_idx[..., None, None], axis=-1)[..., 0]
+
+    # Reorder to [w, x, y, z]
+    q = q[..., [3, 0, 1, 2]]
+
+    # Ensure quaternion has positive w (flip sign if necessary)
+    q = jax.lax.cond(q[..., 0] < 0, lambda q: -q, lambda q: q, q)
+
     return q
 
 def quat2euler(quat):

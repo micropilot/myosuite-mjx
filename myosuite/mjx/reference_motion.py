@@ -166,9 +166,24 @@ class ReferenceMotion():
             object_ref = self.reference['object'][0]
         elif self.type == ReferenceType.RANDOM:
             self.rng_key, subkey1, subkey2 = jrandom.split(self.rng_key, 3)
-            robot_ref = jrandom.uniform(subkey1, minval=self.reference['robot'][0, :], maxval=self.reference['robot'][1, :])
-            robot_vel_ref = jrandom.uniform(subkey2, minval=self.reference['robot_vel'][0, :], maxval=self.reference['robot_vel'][1, :])
-            object_ref = jrandom.uniform(self.rng_key, minval=self.reference['object'][0, :], maxval=self.reference['object'][1, :])
+            robot_ref = jrandom.uniform(
+                subkey1, 
+                shape=self.reference['robot'][0, :].shape,  # Specify the shape explicitly
+                minval=self.reference['robot'][0, :], 
+                maxval=self.reference['robot'][1, :]
+            )
+            robot_vel_ref = jrandom.uniform(
+                subkey2, 
+                shape=self.reference['robot_vel'][0, :].shape,  # Specify the shape explicitly
+                minval=self.reference['robot_vel'][0, :], 
+                maxval=self.reference['robot_vel'][1, :]
+            )
+            object_ref = jrandom.uniform(
+                self.rng_key, 
+                shape= self.reference['object'][0, :].shape, 
+                minval=self.reference['object'][0, :],
+                maxval=self.reference['object'][1, :]
+            )
         elif self.type == ReferenceType.TRACK:
             ind, ind_next = self.find_timeslot_in_reference(time)
             blend = (time - self.reference['time'][ind]) / (self.reference['time'][ind_next] - self.reference['time'][ind])
