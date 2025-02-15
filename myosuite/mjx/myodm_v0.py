@@ -53,7 +53,8 @@ class TrackEnv(PipelineEnv):
                                     reference, 
                                     motion_start_time, 
                                     motion_extrapolation, 
-                                    terminate_obj_fail)
+                                    terminate_obj_fail,
+                                    terminate_pose_fail)
         
     def __process_path(self, object_name, model_path):
         # Load mj model and setup simulation
