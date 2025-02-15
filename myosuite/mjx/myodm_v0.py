@@ -30,7 +30,6 @@ class TrackEnv(PipelineEnv):
                 motion_extrapolation: bool = True,
                 terminate_obj_fail: bool = True,
                 terminate_pose_fail: bool = False,
-                seed: int = None,
                 **kwargs):
         
         # Load model and setup simulation
@@ -54,9 +53,7 @@ class TrackEnv(PipelineEnv):
                                     reference, 
                                     motion_start_time, 
                                     motion_extrapolation, 
-                                    terminate_obj_fail, 
-                                    terminate_pose_fail, 
-                                    seed)
+                                    terminate_obj_fail)
         
     def __process_path(self, object_name, model_path):
         # Load mj model and setup simulation
@@ -83,12 +80,11 @@ class TrackEnv(PipelineEnv):
                                motion_start_time, 
                                motion_extrapolation, 
                                terminate_obj_fail,
-                               terminate_pose_fail,    
-                               seed):
+                               terminate_pose_fail):
         self.ref = ReferenceMotion(
             reference_data=reference,
             motion_extrapolation=motion_extrapolation,
-            rng_key=jax.random.PRNGKey(seed),
+            rng_key=jax.random.PRNGKey(0),
         )
 
         self.motion_start_time = motion_start_time
