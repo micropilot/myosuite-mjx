@@ -1,7 +1,6 @@
 import os
 os.environ["JAX_CHECK_TRACER_LEAKS"] = "true"
 import functools
-from tqdm import tqdm
 
 import jax
 
@@ -57,4 +56,4 @@ train_fn = functools.partial(ppo.train,
                              seed=1)
 
 
-make_inference_fn, params, _ = train_fn(environment=env, progress_fn=tqdm)
+make_inference_fn, params, _ = train_fn(environment=env)

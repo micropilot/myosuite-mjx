@@ -1,6 +1,5 @@
 import os 
 import time 
-from tqdm import tqdm
 import jax
 from jax import numpy as jp
 
