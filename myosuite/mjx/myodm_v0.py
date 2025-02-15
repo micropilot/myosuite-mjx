@@ -248,12 +248,12 @@ class TrackEnv(PipelineEnv):
         # get reference for current time (returns a named tuple)
         pipeline_state0 = state.pipeline_state
         curr_ref = self.ref.get_reference(pipeline_state0.time + self.motion_start_time)   
-        if curr_ref.object is not None:
-            # Create a new instance of the system with updated site_pos
-            print (type(self.sys.site_pos), type(curr_ref.object[:3]))
-            new_site_pos = self.sys.site_pos.at[self.target_sid].set(curr_ref.object[:3])
-            # Assuming self.sys is a dataclass, create a new instance with updated site_pos
-            self.sys = self.sys.replace(site_pos=new_site_pos)
+        # if curr_ref.object is not None:
+        #     # Create a new instance of the system with updated site_pos
+        #     print (type(self.sys.site_pos), type(curr_ref.object[:3]))
+        #     new_site_pos = self.sys.site_pos.at[self.target_sid].set(curr_ref.object[:3])
+        #     # Assuming self.sys is a dataclass, create a new instance with updated site_pos
+        #     self.sys = self.sys.replace(site_pos=new_site_pos)
 
         pipeline_state = self.pipeline_step(pipeline_state0, action)
         obs = self._get_obs(pipeline_state)

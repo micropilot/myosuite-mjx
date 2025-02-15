@@ -123,7 +123,7 @@ class ReferenceMotion():
         assert 'time' in reference.keys(), "Missing key (time) in reference"
         reference.setdefault('robot_init', reference['robot'][0] if 'robot' in reference else None)
         reference.setdefault('object_init', reference['object'][0] if 'object' in reference else None)
-
+        print (type(reference['time']), type(reference['robot']), type(reference['object']))
         return ReferenceStruct(
             time=jp.array(reference['time']),
             robot=reference.get('robot'),
@@ -187,6 +187,7 @@ class ReferenceMotion():
             object_ref = self.reference['object'][0]
         elif self.type == ReferenceType.RANDOM:
             rng_key, rng1, rng2 = jrandom.split(jax.random.PRNGKey(0), 3)
+            # print ("Before", type(self.reference['robot']), type(self.reference['robot_vel']), type(self.reference['object']))
             robot_ref = jrandom.uniform(
                 rng1, 
                 shape=self.reference['robot'][0, :].shape,  # Specify the shape explicitly
@@ -215,7 +216,8 @@ class ReferenceMotion():
                              (1 - blend) * self.reference['robot_vel'][ind] + blend * self.reference['robot_vel'][ind_next])
             object_ref = (None if self.reference['object'] is None else
                           (1 - blend) * self.reference['object'][ind] + blend * self.reference['object'][ind_next])
-
+        
+        # print ("After", type(time), type(robot_ref), type(robot_vel_ref), type(object_ref))
         return ReferenceStruct(
             time=time,
             robot=robot_ref,
