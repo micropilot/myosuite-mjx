@@ -84,7 +84,7 @@ def mat2euler(mat):
 
 def mat2quat(mat):
     """ Convert Rotation Matrix to Quaternion using JAX """
-    mat = jp.asarray(mat, dtype=jp.float64)
+    mat = jp.asarray(mat, dtype=jp.float32)
     assert mat.shape[-2:] == (3, 3), f"Invalid shape matrix {mat.shape}"
 
     Qxx, Qyx, Qzx = mat[..., 0, 0], mat[..., 0, 1], mat[..., 0, 2]

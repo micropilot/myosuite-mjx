@@ -85,6 +85,9 @@ class ReferenceMotion():
                 self.reference['robot_init'] = self.reference['robot'][0]
             if 'object_init' not in self.reference.keys():
                 self.reference['object_init'] = self.reference['object'][0]
+        
+        # cache to help with finding index
+        self.index_cache = 0
 
     def check_format(self, reference):
         """
@@ -143,13 +146,35 @@ class ReferenceMotion():
             return self.horizon - 1, self.horizon - 1
         assert time <= self.reference['time'][-1], f"Time {time} exceeds max reference duration {self.reference['time'][-1]}"
 
-        indices = jp.searchsorted(self.reference['time'], time, side="right") - 1
-        exact_match = jp.isclose(time, self.reference['time'][indices], atol=10**(-_TIME_PRECISION))
-        return (indices, indices) if exact_match else (indices, indices + 1)
+        # search locally for index
+        if time == self.reference['time'][self.index_cache]:
+            # print(f"curr match: {time}")
+            return (self.index_cache, self.index_cache)
+
+        elif self.index_cache<(self.horizon-1):
+            if time == self.reference['time'][self.index_cache+1]:
+                # print(f"next match: {time}")
+                self.index_cache += 1
+                return (self.index_cache, self.index_cache)
+
+            elif time > self.reference['time'][self.index_cache] and time < self.reference['time'][self.index_cache+1]:
+                # print(f"interval match: {time}")
+                return (self.index_cache, self.index_cache+1)
+            else:
+                print(f"No result using hueristic search. Attempting sort match: {time}")
+                self.index_cache = np.searchsorted(self.reference['time'], time, side="right") - 1
+                if time == self.reference['time'][self.index_cache]:
+                    return (self.index_cache, self.index_cache)
+                elif time > self.reference['time'][self.index_cache] and time < self.reference['time'][self.index_cache+1]:
+                    return (self.index_cache, self.index_cache+1)
+                else:
+                    raise ValueError("We shouldn't be in this condition")
+        else:
+            raise ValueError("We shouldn't be in this condition")
 
     def reset(self):
         """Reset the PRNG key to start conditions."""
-        self.rng_key = jrandom.PRNGKey(0)
+        self.index_cache = 0
 
     def get_init(self):
         """Return the initial posture of the robot and the object."""
