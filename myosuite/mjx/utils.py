@@ -3,6 +3,7 @@ from mujoco import mjx
 import jax
 from brax.mjx.base import State as MjxState
 
+
 def perturbed_pipeline_step(sys, pipeline_state, action, xfrc_applied, n_frames):
     """Takes a physics step using the physics pipeline."""
 

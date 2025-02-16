@@ -9,6 +9,7 @@ from gymnax.environments import environment, spaces
 from brax import envs
 from brax.envs.wrappers.training import EpisodeWrapper, AutoResetWrapper
 
+
 class GymnaxWrapper(object):
     """Base class for Gymnax wrappers."""
 

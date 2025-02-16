@@ -1,15 +1,16 @@
-""" =================================================
+"""=================================================
 Copyright (C) 2018 Vikash Kumar
 Author  :: Vikash Kumar (vikashplus@gmail.com)
 Source  :: https://github.com/vikashplus/robohive
 License :: Under Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-================================================= """
+================================================="""
 
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import sys
 
-def parse_xml_with_comments(xml_path: str=None, xml_str: str=None):
+
+def parse_xml_with_comments(xml_path: str = None, xml_str: str = None):
     """
     Parse XML while preserving comments.
         Input:
@@ -21,17 +22,22 @@ def parse_xml_with_comments(xml_path: str=None, xml_str: str=None):
     if xml_str:
         tree = ET.ElementTree(ET.fromstring(xml_str))
     elif xml_path:
-        if sys.version_info[0]+0.1*sys.version_info[1]< 3.8:
+        if sys.version_info[0] + 0.1 * sys.version_info[1] < 3.8:
             # python version < 3.8: Create a custom parser
             class CommentedTreeBuilder(ET.TreeBuilder):
                 def comment(self, data):
                     self.start(ET.Comment, {})
                     self.data(data)
                     self.end(ET.Comment)
-            tree = ET.parse(xml_path, parser=ET.XMLParser(target=CommentedTreeBuilder()))
+
+            tree = ET.parse(
+                xml_path, parser=ET.XMLParser(target=CommentedTreeBuilder())
+            )
         else:
             # python version >= 3.8: Use default parser with corrent configuration
-            parser_with_comments = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
+            parser_with_comments = ET.XMLParser(
+                target=ET.TreeBuilder(insert_comments=True)
+            )
             tree = ET.parse(xml_path, parser=parser_with_comments)
     else:
         raise TypeError("Both xml_path and xml_str can't be None")
@@ -39,9 +45,7 @@ def parse_xml_with_comments(xml_path: str=None, xml_str: str=None):
     return tree
 
 
-def get_xml_str(tree: ET.ElementTree=None,
-                node:ET.Element=None,
-                pretty=False):
+def get_xml_str(tree: ET.ElementTree = None, node: ET.Element = None, pretty=False):
     """
     Serealize tree/ node into string
         Input:
@@ -59,22 +63,24 @@ def get_xml_str(tree: ET.ElementTree=None,
         node.tail = ""
         node.text = ""
         for elem in node.iter():
-            elem.tail=""
+            elem.tail = ""
             if elem.tag != ET.Comment:
                 elem.text = ""
-        xmlstr = ET.tostring(node, encoding='unicode', method='xml')
+        xmlstr = ET.tostring(node, encoding="unicode", method="xml")
         xmlstr = minidom.parseString(xmlstr).toprettyxml(indent="\t")
     else:
-        xmlstr = ET.tostring(node, encoding='unicode', method='xml')
+        xmlstr = ET.tostring(node, encoding="unicode", method="xml")
 
-    return(xmlstr)
+    return xmlstr
 
 
-def merge_xmls( receiver_xml:str,
-                donor_xml:str,
-                receiver_node=None,
-                donor_node=None,
-                destination="str"):
+def merge_xmls(
+    receiver_xml: str,
+    donor_xml: str,
+    receiver_node=None,
+    donor_node=None,
+    destination="str",
+):
     """
     Merge XMLs preserving MuJoCo structure
         Input:
@@ -88,7 +94,9 @@ def merge_xmls( receiver_xml:str,
             merged_xml      : str or tree format
     """
     receiver_tree = parse_xml_with_comments(receiver_xml)
-    receiver_elem = receiver_tree.find(receiver_node) if receiver_node else receiver_tree.getroot()
+    receiver_elem = (
+        receiver_tree.find(receiver_node) if receiver_node else receiver_tree.getroot()
+    )
     assert receiver_elem, "Receiving node:{} not found".format(receiver_node)
 
     donor_tree = parse_xml_with_comments(donor_xml)
@@ -102,12 +110,14 @@ def merge_xmls( receiver_xml:str,
         return receiver_tree
 
 
-def reassign_parent( xml_path: str=None,
-                    xml_str: str=None,
-                    receiver_node=None,
-                    donor_node=None,
-                    donor_override:dict=None,
-                    destination="str"):
+def reassign_parent(
+    xml_path: str = None,
+    xml_str: str = None,
+    receiver_node=None,
+    donor_node=None,
+    donor_override: dict = None,
+    destination="str",
+):
     """
     Merge XMLs preserving MuJoCo structure
         Input:
@@ -122,7 +132,7 @@ def reassign_parent( xml_path: str=None,
             merged_xml      : str or tree format
     """
 
-    ori_keys = ['quat', 'euler', 'axisangle']
+    ori_keys = ["quat", "euler", "axisangle"]
 
     # find elements
     xml_tree = parse_xml_with_comments(xml_path=xml_path, xml_str=xml_str)
@@ -132,14 +142,14 @@ def reassign_parent( xml_path: str=None,
     child_elem = xml_tree.find(".//body[@name='{}']".format(donor_node))
     assert child_elem, "Child node:{} not found".format(child_elem)
 
-
     # override donor attributes
     if donor_override:
         for key, val in donor_override.items():
             # remove other orientation keys if orientation override specified
             if key in ori_keys:
                 for ori_key in ori_keys:
-                    if ori_key in child_elem.keys(): child_elem.attrib.pop(ori_key)
+                    if ori_key in child_elem.keys():
+                        child_elem.attrib.pop(ori_key)
             # set keys
             child_elem.set(key, val)
 

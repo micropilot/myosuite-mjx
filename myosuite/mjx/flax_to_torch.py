@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import jax.numpy as jnp
 
+
 class TorchModel(torch.nn.Module):
     def __init__(self, inputs, num_classes=1):
         super(TorchModel, self).__init__()
@@ -15,7 +16,8 @@ class TorchModel(torch.nn.Module):
         x = self.dense3(x)
         return x
 
-class TorchPolicy():
+
+class TorchPolicy:
 
     def __init__(self, model):
         self.model = model
@@ -56,19 +58,38 @@ class TorchPolicy():
 
 def flax_to_torch(flax_model, torch_model):
     """Copy flax model weights to pytorch model."""
-    for param_torch, param_flax in zip(torch_model.named_children(), flax_model.params['params'].keys()):
-        if param_flax.startswith('Dense'):
-            param_torch[1].weight.data = torch.from_numpy(np.array(jnp.transpose(flax_model.params['params'][param_flax]['kernel'])))
-            param_torch[1].bias.data = torch.from_numpy(np.array(flax_model.params['params'][param_flax]['bias']))
+    for param_torch, param_flax in zip(
+        torch_model.named_children(), flax_model.params["params"].keys()
+    ):
+        if param_flax.startswith("Dense"):
+            param_torch[1].weight.data = torch.from_numpy(
+                np.array(
+                    jnp.transpose(flax_model.params["params"][param_flax]["kernel"])
+                )
+            )
+            param_torch[1].bias.data = torch.from_numpy(
+                np.array(flax_model.params["params"][param_flax]["bias"])
+            )
     return torch_model
+
 
 def load_from_flax_ckpt(flax_ckpt_folder, torch_model):
     from flax.training import checkpoints
-    ckpt = checkpoints.restore_checkpoint(flax_ckpt_folder, target=None,)
-    flax_params = ckpt['params']
 
-    for param_torch, param_flax in zip(torch_model.named_children(), flax_params.keys()):
-        if param_flax.startswith('Dense'):
-            param_torch[1].weight.data = torch.from_numpy(np.array(jnp.transpose(flax_params[param_flax]['kernel'])))
-            param_torch[1].bias.data = torch.from_numpy(np.array(flax_params[param_flax]['bias']))
+    ckpt = checkpoints.restore_checkpoint(
+        flax_ckpt_folder,
+        target=None,
+    )
+    flax_params = ckpt["params"]
+
+    for param_torch, param_flax in zip(
+        torch_model.named_children(), flax_params.keys()
+    ):
+        if param_flax.startswith("Dense"):
+            param_torch[1].weight.data = torch.from_numpy(
+                np.array(jnp.transpose(flax_params[param_flax]["kernel"]))
+            )
+            param_torch[1].bias.data = torch.from_numpy(
+                np.array(flax_params[param_flax]["bias"])
+            )
     return torch_model

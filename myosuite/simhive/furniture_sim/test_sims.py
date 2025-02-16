@@ -3,32 +3,41 @@ import os
 
 try:
     import mujoco_py
-    from mujoco_py import load_model_from_path, MjSim, MjViewer, load_model_from_xml, ignore_mujoco_warnings
+    from mujoco_py import (
+        load_model_from_path,
+        MjSim,
+        MjViewer,
+        load_model_from_xml,
+        ignore_mujoco_warnings,
+    )
 except ImportError as e:
-    raise ImportError("(HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)")
+    raise ImportError(
+        "(HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)"
+    )
 
 
 model_paths = [
-            "bin.xml",
-            "dishwasher.xml",
-            "kettle.xml",
-            "microwave.xml",
-            "simpleTable.xml",
-            "studyTable.xml",
-            "counters.xml",
-            "hingecabinet.xml",
-            "lightButtons.xml",
-            "oven.xml",
-            "slidecabinet.xml",
-            "ventionTable.xml",
-            "kitchen/kitchen1.xml",
-            "kitchen/kitchen2.xml",
-            "kitchen/kitchen3.xml",
-        ]
+    "bin.xml",
+    "dishwasher.xml",
+    "kettle.xml",
+    "microwave.xml",
+    "simpleTable.xml",
+    "studyTable.xml",
+    "counters.xml",
+    "hingecabinet.xml",
+    "lightButtons.xml",
+    "oven.xml",
+    "slidecabinet.xml",
+    "ventionTable.xml",
+    "kitchen/kitchen1.xml",
+    "kitchen/kitchen2.xml",
+    "kitchen/kitchen3.xml",
+]
+
 
 class TestSims(unittest.TestCase):
 
-    def get_sim(self, model_path:str=None, model_xmlstr=None):
+    def get_sim(self, model_path: str = None, model_xmlstr=None):
         """
         Get sim using model_path or model_xmlstr.
         """
@@ -47,7 +56,6 @@ class TestSims(unittest.TestCase):
 
         return MjSim(model)
 
-
     def test_sims(self):
 
         for model_path in model_paths:
@@ -55,6 +63,5 @@ class TestSims(unittest.TestCase):
             self.get_sim(model_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-

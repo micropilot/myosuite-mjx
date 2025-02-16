@@ -17,7 +17,14 @@ class MyoHandAirplaneV0(MjxEnv):
         "penalty": -2,
     }
 
-    def __init__(self, model_path, weighted_reward_keys={}, frame_skip=10, muscle_condition="", **kwargs):
+    def __init__(
+        self,
+        model_path,
+        weighted_reward_keys={},
+        frame_skip=10,
+        muscle_condition="",
+        **kwargs
+    ):
         mj_model = mujoco.MjModel.from_xml_path(model_path)
 
         # Additional environment setup
@@ -27,7 +34,9 @@ class MyoHandAirplaneV0(MjxEnv):
         # Fatigue setup if needed
         self.fatigue_model = None
         if self.muscle_condition == "fatigue":
-            self.fatigue_model = CumulativeFatigueJAX(mj_model, frame_skip, seed=kwargs.get("seed", 0))
+            self.fatigue_model = CumulativeFatigueJAX(
+                mj_model, frame_skip, seed=kwargs.get("seed", 0)
+            )
 
         # Initialize position and velocity arrays
         self.q_pos_init = jp.zeros(mj_model.nq)
@@ -41,7 +50,17 @@ class MyoHandAirplaneV0(MjxEnv):
         super().__init__(model=mj_model, **kwargs)
         self._setup(**kwargs)
 
-    def _setup(self, reference, motion_start_time=0, motion_extrapolation=True, obs_keys=None, weighted_reward_keys=None, Termimate_obj_fail=True, Termimate_pose_fail=False, **kwargs):
+    def _setup(
+        self,
+        reference,
+        motion_start_time=0,
+        motion_extrapolation=True,
+        obs_keys=None,
+        weighted_reward_keys=None,
+        Termimate_obj_fail=True,
+        Termimate_pose_fail=False,
+        **kwargs
+    ):
         self.ref = ReferenceMotion(reference, motion_extrapolation=motion_extrapolation)
         self.motion_start_time = motion_start_time
 
@@ -79,31 +98,54 @@ class MyoHandAirplaneV0(MjxEnv):
         obs_dict["curr_hand_qpos"] = data.qpos[:-6]
         obs_dict["curr_hand_qvel"] = data.qvel[:-6]
         obs_dict["targ_hand_qpos"] = curr_ref.robot
-        obs_dict["targ_hand_qvel"] = jp.array([0]) if curr_ref.robot_vel is None else curr_ref.robot_vel
+        obs_dict["targ_hand_qvel"] = (
+            jp.array([0]) if curr_ref.robot_vel is None else curr_ref.robot_vel
+        )
 
         # Object and wrist errors
         obs_dict["curr_obj_com"] = data.xipos[self.object_bid]
-        obs_dict["curr_obj_rot"] = mat2quat(jp.reshape(data.ximat[self.object_bid], (3, 3)))
+        obs_dict["curr_obj_rot"] = mat2quat(
+            jp.reshape(data.ximat[self.object_bid], (3, 3))
+        )
         obs_dict["wrist_err"] = data.xipos[self.wrist_bid]
         obs_dict["base_error"] = obs_dict["curr_obj_com"] - obs_dict["wrist_err"]
 
         # Target and error calculations
         obs_dict["targ_obj_com"] = curr_ref.object[:3]
         obs_dict["targ_obj_rot"] = curr_ref.object[3:]
-        obs_dict["hand_qpos_err"] = obs_dict["curr_hand_qpos"] - obs_dict["targ_hand_qpos"]
-        obs_dict["hand_qvel_err"] = jp.array([0]) if curr_ref.robot_vel is None else obs_dict["curr_hand_qvel"] - obs_dict["targ_hand_qvel"]
+        obs_dict["hand_qpos_err"] = (
+            obs_dict["curr_hand_qpos"] - obs_dict["targ_hand_qpos"]
+        )
+        obs_dict["hand_qvel_err"] = (
+            jp.array([0])
+            if curr_ref.robot_vel is None
+            else obs_dict["curr_hand_qvel"] - obs_dict["targ_hand_qvel"]
+        )
         obs_dict["obj_com_err"] = obs_dict["curr_obj_com"] - obs_dict["targ_obj_com"]
         return obs_dict
 
     def get_reward_dict(self, obs_dict):
-        obj_com_err = jp.sqrt(self.norm2(obs_dict["targ_obj_com"] - obs_dict["curr_obj_com"]))
-        obj_rot_err = self.rotation_distance(obs_dict["curr_obj_rot"], obs_dict["targ_obj_rot"]) / jp.pi
+        obj_com_err = jp.sqrt(
+            self.norm2(obs_dict["targ_obj_com"] - obs_dict["curr_obj_com"])
+        )
+        obj_rot_err = (
+            self.rotation_distance(obs_dict["curr_obj_rot"], obs_dict["targ_obj_rot"])
+            / jp.pi
+        )
         obj_reward = jp.exp(-self.obj_err_scale * (obj_com_err + 0.1 * obj_rot_err))
 
-        lift_bonus = (obs_dict["targ_obj_com"][2] >= self._lift_z) & (obs_dict["curr_obj_com"][2] >= self._lift_z)
-        
-        qpos_reward = jp.exp(-self.qpos_err_scale * self.norm2(obs_dict["hand_qpos_err"]))
-        qvel_reward = jp.array([0]) if obs_dict["hand_qvel_err"] is None else jp.exp(-self.qvel_err_scale * self.norm2(obs_dict["hand_qvel_err"]))
+        lift_bonus = (obs_dict["targ_obj_com"][2] >= self._lift_z) & (
+            obs_dict["curr_obj_com"][2] >= self._lift_z
+        )
+
+        qpos_reward = jp.exp(
+            -self.qpos_err_scale * self.norm2(obs_dict["hand_qpos_err"])
+        )
+        qvel_reward = (
+            jp.array([0])
+            if obs_dict["hand_qvel_err"] is None
+            else jp.exp(-self.qvel_err_scale * self.norm2(obs_dict["hand_qvel_err"]))
+        )
 
         pose_reward = self.qpos_reward_weight * qpos_reward
         vel_reward = self.qvel_reward_weight * qvel_reward
@@ -111,16 +153,22 @@ class MyoHandAirplaneV0(MjxEnv):
         base_error = jp.sqrt(self.norm2(obs_dict["base_error"]))
         base_reward = jp.exp(-self.base_err_scale * base_error)
 
-        rwd_dict = collections.OrderedDict((
-            ("pose", float(pose_reward + vel_reward)),
-            ("object", float(obj_reward + base_reward)),
-            ("bonus", self.lift_bonus_mag * float(lift_bonus)),
-            ("penalty", float(self.check_termination(obs_dict))),
-            ("sparse", 0),
-            ("solved", 0),
-            ("done", self.check_termination(obs_dict)),
-        ))
-        rwd_dict["dense"] = jp.sum(jp.array([self.rwd_keys_wt[key] * rwd_dict[key] for key in self.rwd_keys_wt]))
+        rwd_dict = collections.OrderedDict(
+            (
+                ("pose", float(pose_reward + vel_reward)),
+                ("object", float(obj_reward + base_reward)),
+                ("bonus", self.lift_bonus_mag * float(lift_bonus)),
+                ("penalty", float(self.check_termination(obs_dict))),
+                ("sparse", 0),
+                ("solved", 0),
+                ("done", self.check_termination(obs_dict)),
+            )
+        )
+        rwd_dict["dense"] = jp.sum(
+            jp.array(
+                [self.rwd_keys_wt[key] * rwd_dict[key] for key in self.rwd_keys_wt]
+            )
+        )
         return rwd_dict
 
     def rotation_distance(self, q1, q2):
@@ -129,9 +177,15 @@ class MyoHandAirplaneV0(MjxEnv):
         return jp.abs(quatDiff2Vel(q2, q1, 1)[0])
 
     def check_termination(self, obs_dict):
-        obj_term = self.TermObj and jp.where(self.norm2(obs_dict["obj_com_err"]) >= self.obj_fail_thresh**2, 1, 0)
-        qpos_term = self.TermPose and jp.where(self.norm2(obs_dict["hand_qpos_err"]) >= self.qpos_fail_thresh, 1, 0)
-        base_term = self.TermObj and jp.where(self.norm2(obs_dict["base_error"]) >= self.base_fail_thresh**2, 1, 0)
+        obj_term = self.TermObj and jp.where(
+            self.norm2(obs_dict["obj_com_err"]) >= self.obj_fail_thresh**2, 1, 0
+        )
+        qpos_term = self.TermPose and jp.where(
+            self.norm2(obs_dict["hand_qpos_err"]) >= self.qpos_fail_thresh, 1, 0
+        )
+        base_term = self.TermObj and jp.where(
+            self.norm2(obs_dict["base_error"]) >= self.base_fail_thresh**2, 1, 0
+        )
         return obj_term | qpos_term | base_term
 
     def norm2(self, x):
@@ -141,13 +195,18 @@ class MyoHandAirplaneV0(MjxEnv):
         """Resets the environment to initial state."""
         qpos = self.q_pos_init.copy()
         qvel = self.q_vel_init.copy()
-        
+
         # Initialize fatigue model if applicable
         if self.fatigue_model:
             self.fatigue_model.reset()
 
-        state = State(pipeline_state=None, obs=self._get_obs(), reward=jp.zeros(()), done=jp.zeros(()),
-                      info={"rng": rng})
+        state = State(
+            pipeline_state=None,
+            obs=self._get_obs(),
+            reward=jp.zeros(()),
+            done=jp.zeros(()),
+            info={"rng": rng},
+        )
         return state
 
     def step(self, state: State, action: jp.ndarray) -> State:
@@ -159,16 +218,24 @@ class MyoHandAirplaneV0(MjxEnv):
 
         # Unnormalize actions for the control range
         action = self.unnorm_action(action)
-        
+
         # Perturb and apply dynamics through JAX-compatible step function
-        data = perturbed_pipeline_step(self.sys, state.pipeline_state, action, xfrc_applied=jp.zeros((self.sys.nbody, 6)), frames=self.frame_skip)
+        data = perturbed_pipeline_step(
+            self.sys,
+            state.pipeline_state,
+            action,
+            xfrc_applied=jp.zeros((self.sys.nbody, 6)),
+            frames=self.frame_skip,
+        )
 
         # Compute observations and rewards
         obs = self._get_obs(data)
         reward, terminated = self.compute_reward(data)
 
         # Update state information
-        new_state = state.replace(pipeline_state=data, obs=obs, reward=reward, done=terminated)
+        new_state = state.replace(
+            pipeline_state=data, obs=obs, reward=reward, done=terminated
+        )
         return new_state
 
     def _get_obs(self, data) -> jp.ndarray:
@@ -178,13 +245,14 @@ class MyoHandAirplaneV0(MjxEnv):
     def compute_reward(self, data):
         """Computes reward based on the state of the model."""
         # Example reward for standing upright
-        standing = tolerance(data.qpos[2], bounds=(self.q_pos_init[2], float("inf")), margin=0.4)
+        standing = tolerance(
+            data.qpos[2], bounds=(self.q_pos_init[2], float("inf")), margin=0.4
+        )
         reward = standing  # Placeholder reward logic
         terminated = jp.where(data.qpos[2] < 0.2, 1.0, 0.0)
-        
+
         return reward, terminated
 
     def unnorm_action(self, action):
         """Scale normalized actions to actuator control range."""
         return (action + 1) / 2 * (self.high_action - self.low_action) + self.low_action
-

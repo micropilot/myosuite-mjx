@@ -34,6 +34,7 @@ from torchrl.modules import MLP, ProbabilisticActor, TanhNormal, ValueOperator
 
 from myosuite.utils import gym
 
+
 def make_env(env_name="", device="cpu"):
     env = GymWrapper(gym.make("myoElbowPose1D6MRandom-v0"), device=device)
     env = TransformedEnv(env)
@@ -148,6 +149,7 @@ def eval_model(actor, test_env, num_episodes=3):
         test_rewards.append(reward.cpu())
     del td_test
     return torch.cat(test_rewards, 0).mean()
+
 
 @hydra.main(config_path=".", config_name="config_mujoco")
 def main(cfg: "DictConfig"):  # noqa: F821
@@ -325,9 +327,11 @@ def main(cfg: "DictConfig"):  # noqa: F821
                 "train/lr": alpha * cfg_optim_lr,
                 "train/sampling_time": sampling_time,
                 "train/training_time": training_time,
-                "train/clip_epsilon": alpha * cfg_loss_clip_epsilon
-                if cfg_loss_anneal_clip_eps
-                else cfg_loss_clip_epsilon,
+                "train/clip_epsilon": (
+                    alpha * cfg_loss_clip_epsilon
+                    if cfg_loss_anneal_clip_eps
+                    else cfg_loss_clip_epsilon
+                ),
             }
         )
 

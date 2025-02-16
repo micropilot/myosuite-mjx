@@ -6,16 +6,19 @@ from jax import lax
 _FLOAT_EPS = jp.finfo(jp.float32).eps
 _EPS4 = _FLOAT_EPS * 4.0
 
+
 def mulQuat(qa, qb):
     res = jp.zeros(4)
-    res = res.at[0].set(qa[0]*qb[0] - qa[1]*qb[1] - qa[2]*qb[2] - qa[3]*qb[3])
-    res = res.at[1].set(qa[0]*qb[1] + qa[1]*qb[0] + qa[2]*qb[3] - qa[3]*qb[2])
-    res = res.at[2].set(qa[0]*qb[2] - qa[1]*qb[3] + qa[2]*qb[0] + qa[3]*qb[1])
-    res = res.at[3].set(qa[0]*qb[3] + qa[1]*qb[2] - qa[2]*qb[1] + qa[3]*qb[0])
+    res = res.at[0].set(qa[0] * qb[0] - qa[1] * qb[1] - qa[2] * qb[2] - qa[3] * qb[3])
+    res = res.at[1].set(qa[0] * qb[1] + qa[1] * qb[0] + qa[2] * qb[3] - qa[3] * qb[2])
+    res = res.at[2].set(qa[0] * qb[2] - qa[1] * qb[3] + qa[2] * qb[0] + qa[3] * qb[1])
+    res = res.at[3].set(qa[0] * qb[3] + qa[1] * qb[2] - qa[2] * qb[1] + qa[3] * qb[0])
     return res
+
 
 def negQuat(quat):
     return jp.array([quat[0], -quat[1], -quat[2], -quat[3]])
+
 
 def quat2Vel(quat, dt=1):
     axis = quat[1:].copy()
@@ -24,18 +27,22 @@ def quat2Vel(quat, dt=1):
     speed = 2 * jp.arctan2(sin_a_2, quat[0]) / dt
     return speed, axis
 
+
 def diffQuat(quat1, quat2):
     neg = negQuat(quat1)
     return mulQuat(quat2, neg)
+
 
 def quatDiff2Vel(quat1, quat2, dt):
     diff = diffQuat(quat1, quat2)
     return quat2Vel(diff, dt)
 
+
 def axis_angle2quat(axis, angle):
     c = jp.cos(angle / 2)
     s = jp.sin(angle / 2)
     return jp.array([c, s * axis[0], s * axis[1], s * axis[2]])
+
 
 def euler2mat(euler):
     euler = jp.asarray(euler, dtype=jp.float32)
@@ -57,6 +64,7 @@ def euler2mat(euler):
     mat = mat.at[..., 0, 0].set(cj * ci)
     return mat
 
+
 def euler2quat(euler):
     euler = jp.asarray(euler, dtype=jp.float32)
     ai, aj, ak = euler[..., 2] / 2, -euler[..., 1] / 2, euler[..., 0] / 2
@@ -72,18 +80,34 @@ def euler2quat(euler):
     quat = quat.at[..., 1].set(cj * cs - sj * sc)
     return quat
 
+
 def mat2euler(mat):
     mat = jp.asarray(mat, dtype=jp.float32)
     cy = jp.sqrt(mat[..., 2, 2] * mat[..., 2, 2] + mat[..., 1, 2] * mat[..., 1, 2])
     condition = cy > _EPS4
     euler = jp.empty(mat.shape[:-2] + (3,), dtype=jp.float32)
-    euler = euler.at[..., 2].set(jp.where(condition, -jp.arctan2(mat[..., 0, 1], mat[..., 0, 0]), -jp.arctan2(-mat[..., 1, 0], mat[..., 1, 1])))
-    euler = euler.at[..., 1].set(jp.where(condition, -jp.arctan2(-mat[..., 0, 2], cy), -jp.arctan2(-mat[..., 0, 2], cy)))
-    euler = euler.at[..., 0].set(jp.where(condition, -jp.arctan2(mat[..., 1, 2], mat[..., 2, 2]), 0.0))
+    euler = euler.at[..., 2].set(
+        jp.where(
+            condition,
+            -jp.arctan2(mat[..., 0, 1], mat[..., 0, 0]),
+            -jp.arctan2(-mat[..., 1, 0], mat[..., 1, 1]),
+        )
+    )
+    euler = euler.at[..., 1].set(
+        jp.where(
+            condition,
+            -jp.arctan2(-mat[..., 0, 2], cy),
+            -jp.arctan2(-mat[..., 0, 2], cy),
+        )
+    )
+    euler = euler.at[..., 0].set(
+        jp.where(condition, -jp.arctan2(mat[..., 1, 2], mat[..., 2, 2]), 0.0)
+    )
     return euler
 
+
 def mat2quat(mat):
-    """ Convert Rotation Matrix to Quaternion using JAX """
+    """Convert Rotation Matrix to Quaternion using JAX"""
     mat = jp.asarray(mat, dtype=jp.float32)
     assert mat.shape[-2:] == (3, 3), f"Invalid shape matrix {mat.shape}"
 
@@ -120,8 +144,10 @@ def mat2quat(mat):
 
     return q
 
+
 def quat2euler(quat):
     return mat2euler(quat2mat(quat))
+
 
 def quat2mat(quat):
     quat = jp.asarray(quat, dtype=jp.float32)
@@ -145,23 +171,31 @@ def quat2mat(quat):
     mat = mat.at[..., 2, 2].set(1.0 - (xX + yY))
     return jp.where((Nq > _FLOAT_EPS)[..., jp.newaxis, jp.newaxis], mat, jp.eye(3))
 
+
 def rotVecMatT(vec, mat):
-    return jp.array([
-        mat[0, 0]*vec[0] + mat[1, 0]*vec[1] + mat[2, 0]*vec[2],
-        mat[0, 1]*vec[0] + mat[1, 1]*vec[1] + mat[2, 1]*vec[2],
-        mat[0, 2]*vec[0] + mat[1, 2]*vec[1] + mat[2, 2]*vec[2]
-    ])
+    return jp.array(
+        [
+            mat[0, 0] * vec[0] + mat[1, 0] * vec[1] + mat[2, 0] * vec[2],
+            mat[0, 1] * vec[0] + mat[1, 1] * vec[1] + mat[2, 1] * vec[2],
+            mat[0, 2] * vec[0] + mat[1, 2] * vec[1] + mat[2, 2] * vec[2],
+        ]
+    )
+
 
 def rotVecMat(vec, mat):
-    return jp.array([
-        mat[0, 0]*vec[0] + mat[0, 1]*vec[1] + mat[0, 2]*vec[2],
-        mat[1, 0]*vec[0] + mat[1, 1]*vec[1] + mat[1, 2]*vec[2],
-        mat[2, 0]*vec[0] + mat[2, 1]*vec[1] + mat[2, 2]*vec[2]
-    ])
+    return jp.array(
+        [
+            mat[0, 0] * vec[0] + mat[0, 1] * vec[1] + mat[0, 2] * vec[2],
+            mat[1, 0] * vec[0] + mat[1, 1] * vec[1] + mat[1, 2] * vec[2],
+            mat[2, 0] * vec[0] + mat[2, 1] * vec[1] + mat[2, 2] * vec[2],
+        ]
+    )
+
 
 def rotVecQuat(vec, quat):
     mat = quat2mat(quat)
     return rotVecMat(vec, mat)
+
 
 def quat2euler_intrinsic(quat):
     w, x, y, z = quat
@@ -177,6 +211,7 @@ def quat2euler_intrinsic(quat):
     yaw = jp.arctan2(siny_cosp, cosy_cosp)
 
     return jp.array([roll, pitch, yaw])
+
 
 def intrinsic_euler2quat(euler):
     roll, pitch, yaw = euler
