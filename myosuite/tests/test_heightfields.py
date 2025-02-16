@@ -16,31 +16,36 @@ class TestHeightfields(unittest.TestCase):
             def __init__(self, xml_path):
                 self.model = mujoco.MjModel.from_xml_path(xml_path)
                 self.data = mujoco.MjData(self.model)
+
         return Sim(xml_path)
 
     def _create_chasetagfield(self, seed):
         np_random = gym.utils.seeding.np_random(seed)[0]
-        xml_path = os.path.join(self.curr_dir, "../envs/myo/assets/leg/myolegs_chasetag.xml")
+        xml_path = os.path.join(
+            self.curr_dir, "../envs/myo/assets/leg/myolegs_chasetag.xml"
+        )
         sim = self._create_sim(xml_path)
         return ChaseTagField(
-            sim=sim, 
+            sim=sim,
             rng=np_random,
             hills_range=(0.0, 0.1),
             rough_range=(0.0, 0.1),
             relief_range=(0.0, 0.1),
-            )
+        )
 
     def _create_trackfield(self, seed):
         np_random = gym.utils.seeding.np_random(seed)[0]
-        xml_path = os.path.join(self.curr_dir, "../envs/myo/assets/leg/myoosl_runtrack.xml")
+        xml_path = os.path.join(
+            self.curr_dir, "../envs/myo/assets/leg/myoosl_runtrack.xml"
+        )
         sim = self._create_sim(xml_path)
         return TrackField(
-            sim=sim, 
+            sim=sim,
             rng=np_random,
             rough_difficulties=[0.0, 0.1, 0.2],
             hills_difficulties=[0.0, 0.1, 0.2],
             stairs_difficulties=[0.0, 0.1, 0.2],
-            )
+        )
 
     def test_chasetagfield(self):
         seed = 42
@@ -63,5 +68,5 @@ class TestHeightfields(unittest.TestCase):
         assert_close(data, data2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

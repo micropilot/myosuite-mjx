@@ -1,9 +1,9 @@
-""" =================================================
+"""=================================================
 Copyright (C) 2018 Vikash Kumar
 Author  :: Vikash Kumar (vikashplus@gmail.com), Sudeep Dasari (sdasari@andrew.cmu.edu), Vittorio Caggiano (caggiano@gmail.com)
 Source  :: https://github.com/MyoHub/myosuite
 License :: Under Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-================================================= """
+================================================="""
 
 import collections
 import os
@@ -121,12 +121,12 @@ class TrackEnv(BaseV0):
 
         ##########################################
         self.lift_bonus_thresh = 0.02
-        ### PRE-GRASP
+        # PRE-GRASP
         self.obj_err_scale = 50
         self.base_err_scale = 40
         self.lift_bonus_mag = 1  # 2.5
 
-        ### DEEPMIMIC
+        # DEEPMIMIC
         self.qpos_reward_weight = 0.35
         self.qpos_err_scale = 5.0
 
@@ -161,7 +161,7 @@ class TrackEnv(BaseV0):
         )
 
         # Adjust horizon if not motion_extrapolation
-        if motion_extrapolation == False:
+        if motion_extrapolation is False:
             self.spec.max_episode_steps = self.ref.horizon  # doesn't work always. WIP
 
         # Adjust init as per the specified key
@@ -207,19 +207,19 @@ class TrackEnv(BaseV0):
         obs_dict["qv"] = sim.data.qvel.copy()
         obs_dict["robot_err"] = obs_dict["qp"][:-6].copy() - curr_ref.robot
 
-        ## info about current hand pose + vel
+        # info about current hand pose + vel
         obs_dict["curr_hand_qpos"] = sim.data.qpos[
             :-6
-        ].copy()  ## assuming only 1 object and the last values are posision + rotation
-        obs_dict["curr_hand_qvel"] = sim.data.qvel[:-6].copy()  ## not used for now
+        ].copy()  # assuming only 1 object and the last values are posision + rotation
+        obs_dict["curr_hand_qvel"] = sim.data.qvel[:-6].copy()  # not used for now
 
-        ## info about target hand pose + vel
+        # info about target hand pose + vel
         obs_dict["targ_hand_qpos"] = curr_ref.robot
         obs_dict["targ_hand_qvel"] = (
             np.array([0]) if curr_ref.robot_vel is None else curr_ref.robot_vel
         )
 
-        ## info about current object com + rotations
+        # info about current object com + rotations
         obs_dict["curr_obj_com"] = self.sim.data.xipos[self.object_bid].copy()
         obs_dict["curr_obj_rot"] = mat2quat(
             np.reshape(self.sim.data.ximat[self.object_bid].copy(), (3, 3))
@@ -229,11 +229,11 @@ class TrackEnv(BaseV0):
 
         obs_dict["base_error"] = obs_dict["curr_obj_com"] - obs_dict["wrist_err"]
 
-        ## info about target object com + rotations
+        # info about target object com + rotations
         obs_dict["targ_obj_com"] = curr_ref.object[:3]
         obs_dict["targ_obj_rot"] = curr_ref.object[3:]
 
-        ## Errors
+        # Errors
         obs_dict["hand_qpos_err"] = (
             obs_dict["curr_hand_qpos"] - obs_dict["targ_hand_qpos"]
         )
@@ -360,12 +360,3 @@ class TrackEnv(BaseV0):
         return (
             obj_term or qpos_term or base_term
         )  # combining termination for object + posture
-
-
-from myosuite.utils import gym
-env = gym.make('MyoHandAirplaneFly-v0')
-env.reset()
-env.step(env.action_space.sample())
-
-
-

@@ -1,0 +1,3 @@
+[flake8]
+ignore = E402 W503 E501 E203
+exclude = myosuite/simhive/

@@ -1,13 +1,11 @@
 import jax
-import jax.numpy as jp
-from jax.random import PRNGKey
-import mujoco 
+import mujoco
 from mujoco import mjx
 import mediapy
 
 
 # Load Mujoco Model
-mj_model = mujoco.MjModel.from_xml_path('myosuite/simhive/myo_sim/hand/myohand.xml')
+mj_model = mujoco.MjModel.from_xml_path("myosuite/simhive/myo_sim/hand/myohand.xml")
 mj_data = mujoco.MjData(mj_model)
 mjx_model = mjx.put_model(mj_model)
 mjx_data = mjx.put_data(m=mj_model, d=mj_data)
@@ -24,7 +22,9 @@ renderer = mujoco.Renderer(mj_model)
 scene_option = mujoco.MjvOption()
 scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True  # Keep joint visualization
 scene_option.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = False  # Disable transparency
-scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = False  # Disable contact points
+scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = (
+    False  # Disable contact points
+)
 scene_option.flags[mujoco.mjtVisFlag.mjVIS_CONSTRAINT] = False  # Disable constraints
 
 # Camera setup: Change camera angle
@@ -44,13 +44,12 @@ frames = []
 mujoco.mj_resetData(mj_model, mj_data)
 mjx_data = mjx.put_data(mj_model, mj_data)
 while mjx_data.time < duration:
-  mjx_data = jit_step(mjx_model, mjx_data)
-  if len(frames) < mjx_data.time * framerate:
-    mj_data = mjx.get_data(mj_model, mjx_data)
-    renderer.update_scene(mj_data, scene_option=scene_option, camera=camera)
-    pixels = renderer.render()
-    frames.append(pixels)
-     
+    mjx_data = jit_step(mjx_model, mjx_data)
+    if len(frames) < mjx_data.time * framerate:
+        mj_data = mjx.get_data(mj_model, mjx_data)
+        renderer.update_scene(mj_data, scene_option=scene_option, camera=camera)
+        pixels = renderer.render()
+        frames.append(pixels)
+
 
 mediapy.write_video("myohand_mjx.mp4", frames, fps=framerate)
-

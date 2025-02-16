@@ -8,6 +8,7 @@ from importlib import import_module
 from typing import Union, Callable, Dict
 from packaging.version import parse
 
+
 class implement_for:
     """A version decorator that checks the version in the environment and implements a function with the fitting one.
 
@@ -152,7 +153,7 @@ class implement_for:
 
         return _lazy_call_fn
 
-    def _call(self):
+    def _call(self):  # noqa: C901
 
         # If the module is missing replace the function with the mock.
         fn = self.fn

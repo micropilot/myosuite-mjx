@@ -1,9 +1,9 @@
-""" =================================================
+"""=================================================
 Copyright (C) 2018 Vikash Kumar, Copyright (C) 2019 The ROBEL Authors
 Author  :: Vikash Kumar (vikashplus@gmail.com)
 Source  :: https://github.com/vikashplus/robohive
 License :: Under Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-================================================= """
+================================================="""
 
 """Domain-randomization for simulations."""
 
@@ -37,9 +37,11 @@ class SimRandomizer:
         """Returns the random state."""
         return self.env.np_random
 
-    def randomize_global(self,
-                         total_mass_range: Optional[Range] = None,
-                         height_field_range: Optional[Range] = None):
+    def randomize_global(
+        self,
+        total_mass_range: Optional[Range] = None,
+        height_field_range: Optional[Range] = None,
+    ):
         """Randomizes global options in the scene.
 
         Args:
@@ -51,16 +53,20 @@ class SimRandomizer:
         if total_mass_range is not None:
             self.sim_scene.get_mjlib().mj_setTotalmass(
                 self.sim_scene.get_handle(self.model),
-                self.rand.uniform(*total_mass_range))
+                self.rand.uniform(*total_mass_range),
+            )
 
         if height_field_range is not None:
             self.model.hfield_data[:] = self.rand.uniform(
-                *height_field_range, size=np.shape(self.model.hfield_data))
+                *height_field_range, size=np.shape(self.model.hfield_data)
+            )
 
-    def randomize_bodies(self,
-                         names: Optional[Iterable[str]] = None,
-                         all_same: bool = False,
-                         position_perturb_range: Optional[Range] = None):
+    def randomize_bodies(
+        self,
+        names: Optional[Iterable[str]] = None,
+        all_same: bool = False,
+        position_perturb_range: Optional[Range] = None,
+    ):
         """Randomizes the bodies in the scene.
 
         Args:
@@ -81,18 +87,20 @@ class SimRandomizer:
         if position_perturb_range is not None:
             original_pos = self.orig_model.body_pos[body_ids]
             self.model.body_pos[body_ids] = original_pos + self.rand.uniform(
-                *position_perturb_range,
-                size=(3,) if all_same else (num_bodies, 3))
+                *position_perturb_range, size=(3,) if all_same else (num_bodies, 3)
+            )
 
-    def randomize_geoms(self,
-                        names: Optional[Iterable[str]] = None,
-                        parent_body_names: Optional[Iterable[str]] = None,
-                        all_same: bool = False,
-                        size_perturb_range: Optional[Range] = None,
-                        color_range: Optional[Range] = None,
-                        friction_slide_range: Optional[Range] = None,
-                        friction_spin_range: Optional[Range] = None,
-                        friction_roll_range: Optional[Range] = None):
+    def randomize_geoms(  # noqa: C901
+        self,
+        names: Optional[Iterable[str]] = None,
+        parent_body_names: Optional[Iterable[str]] = None,
+        all_same: bool = False,
+        size_perturb_range: Optional[Range] = None,
+        color_range: Optional[Range] = None,
+        friction_slide_range: Optional[Range] = None,
+        friction_spin_range: Optional[Range] = None,
+        friction_roll_range: Optional[Range] = None,
+    ):
         """Randomizes the geoms in the scene.
 
         Args:
@@ -134,31 +142,38 @@ class SimRandomizer:
         if size_perturb_range is not None:
             original_size = self.orig_model.geom_size[geom_ids]
             self.model.geom_size[geom_ids] = original_size + self.rand.uniform(
-                *size_perturb_range, size=(3,) if all_same else (num_geoms, 3))
+                *size_perturb_range, size=(3,) if all_same else (num_geoms, 3)
+            )
 
         # Randomize the color of the geoms.
         if color_range is not None:
             self.model.geom_rgba[geom_ids, :3] = self.rand.uniform(
-                *color_range, size=(3,) if all_same else (num_geoms, 3))
+                *color_range, size=(3,) if all_same else (num_geoms, 3)
+            )
 
         # Randomize the friction parameters.
         if friction_slide_range is not None:
             self.model.geom_friction[geom_ids, 0] = self.rand.uniform(
-                *friction_slide_range, size=1 if all_same else num_geoms)
+                *friction_slide_range, size=1 if all_same else num_geoms
+            )
 
         if friction_spin_range is not None:
             self.model.geom_friction[geom_ids, 1] = self.rand.uniform(
-                *friction_spin_range, size=1 if all_same else num_geoms)
+                *friction_spin_range, size=1 if all_same else num_geoms
+            )
 
         if friction_roll_range is not None:
             self.model.geom_friction[geom_ids, 2] = self.rand.uniform(
-                *friction_roll_range, size=1 if all_same else num_geoms)
+                *friction_roll_range, size=1 if all_same else num_geoms
+            )
 
-    def randomize_dofs(self,
-                       indices: Optional[Iterable[int]] = None,
-                       all_same: bool = False,
-                       damping_range: Optional[Range] = None,
-                       friction_loss_range: Optional[Range] = None):
+    def randomize_dofs(
+        self,
+        indices: Optional[Iterable[int]] = None,
+        all_same: bool = False,
+        damping_range: Optional[Range] = None,
+        friction_loss_range: Optional[Range] = None,
+    ):
         """Randomizes the DoFs in the scene.
 
         Args:
@@ -173,26 +188,31 @@ class SimRandomizer:
             dof_ids = list(range(self.model.nv))
         else:
             nv = self.model.nv
-            assert all(-nv <= i < nv for i in indices), \
-                'All DoF indices must be in [-{}, {}]'.format(nv, nv-1)
+            assert all(
+                -nv <= i < nv for i in indices
+            ), "All DoF indices must be in [-{}, {}]".format(nv, nv - 1)
             dof_ids = sorted(set(indices))
         num_dofs = len(dof_ids)
 
         # Randomize the damping for each DoF.
         if damping_range is not None:
             self.model.dof_damping[dof_ids] = self.rand.uniform(
-                *damping_range, size=1 if all_same else num_dofs)
+                *damping_range, size=1 if all_same else num_dofs
+            )
 
         # Randomize the friction loss for each DoF.
         if friction_loss_range is not None:
             self.model.dof_frictionloss[dof_ids] = self.rand.uniform(
-                *friction_loss_range, size=1 if all_same else num_dofs)
+                *friction_loss_range, size=1 if all_same else num_dofs
+            )
 
-    def randomize_actuators(self,
-                            indices: Optional[Iterable[int]] = None,
-                            all_same: bool = False,
-                            kp_range: Optional[Range] = None,
-                            kv_range: Optional[Range] = None):
+    def randomize_actuators(
+        self,
+        indices: Optional[Iterable[int]] = None,
+        all_same: bool = False,
+        kp_range: Optional[Range] = None,
+        kv_range: Optional[Range] = None,
+    ):
         """Randomizes the actuators in the scene.
 
         Args:
@@ -208,8 +228,9 @@ class SimRandomizer:
             act_ids = list(range(self.model.nu))
         else:
             nu = self.model.nu
-            assert all(-nu <= i < nu for i in indices), \
-                'All actuator indices must be in [-{}, {}]'.format(nu, nu-1)
+            assert all(
+                -nu <= i < nu for i in indices
+            ), "All actuator indices must be in [-{}, {}]".format(nu, nu - 1)
             act_ids = sorted(set(indices))
         num_acts = len(act_ids)
 

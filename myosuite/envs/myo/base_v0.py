@@ -1,7 +1,7 @@
-""" =================================================
+"""=================================================
 # Copyright (c) Facebook, Inc. and its affiliates
 Authors  :: Vikash Kumar (vikashplus@gmail.com), Vittorio Caggiano (caggiano@gmail.com)
-================================================= """
+================================================="""
 
 import logging
 
@@ -10,6 +10,7 @@ import numpy as np
 
 from myosuite.envs import env_base
 from myosuite.envs.myo.fatigue import CumulativeFatigue
+
 
 class BaseV0(env_base.MujocoEnv):
 
