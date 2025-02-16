@@ -44,7 +44,7 @@ class CumulativeFatigue:
         self.seed(
             seed
         )  # Create own Random Number Generator (RNG) used when reset is called with fatigue_reset_random=True
-        ### NOTE: the seed from CumulativeFatigue is not synchronised with the seed used for the rest of MujocoEnv!
+        # NOTE: the seed from CumulativeFatigue is not synchronised with the seed used for the rest of MujocoEnv!
 
     def set_FatigueCoefficient(self, F):
         # Set Fatigue coefficients
@@ -66,7 +66,7 @@ class CumulativeFatigue:
         # Calculate effective time constant tau (see https://mujoco.readthedocs.io/en/stable/modeling.html#muscles)
         self._LD = 1 / self._tauact * (0.5 + 1.5 * self._MA)
         self._LR = (0.5 + 1.5 * self._MA) / self._taudeact
-        ## TODO: account for smooth transition phase of length tausmooth (tausmooth = mj_model.actuator_dynprm[i][2])?
+        # TODO: account for smooth transition phase of length tausmooth (tausmooth = mj_model.actuator_dynprm[i][2])?
 
         # Calculate C(t) -- transfer rate between MR and MA
         C = np.zeros_like(self._MA)
