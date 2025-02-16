@@ -128,7 +128,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
                 self.sim.model.jnt_type == self.sim.lib.mjtJoint.mjJNT_SLIDE,
                 self.sim.model.jnt_type == self.sim.lib.mjtJoint.mjJNT_HINGE,
             )
-            linear_jnt_ids = np.where(linear_jnt_ids == True)[0]
+            linear_jnt_ids = np.where(linear_jnt_ids)[0]
             linear_actuated_jnt_ids = np.intersect1d(actuated_jnt_ids, linear_jnt_ids)
             # assert np.any(actuated_jnt_ids==linear_actuated_jnt_ids), "Wooho: Great evidence that it was important to check for actuated_jnt_ids as well as linear_actuated_jnt_ids"
             linear_actuated_jnt_qposids = self.sim.model.jnt_qposadr[
@@ -151,7 +151,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
         self.proprio_dict = {}
         self.proprio_keys = (
             proprio_keys
-            if type(proprio_keys) == list or proprio_keys == None
+            if isinstance(proprio_keys, list) or proprio_keys is None
             else [proprio_keys]
         )
 
@@ -159,7 +159,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
         self.visual_dict = {}
         self.visual_keys = (
             visual_keys
-            if type(visual_keys) == list or visual_keys == None
+            if isinstance(visual_keys, list) or visual_keys is None
             else [visual_keys]
         )
         self._setup_rgb_encoders(self.visual_keys, device=None)
@@ -177,11 +177,11 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
 
         return
 
-    def _setup_rgb_encoders(self, visual_keys, device=None):
+    def _setup_rgb_encoders(self, visual_keys, device=None):  # noqa: C901
         """
         Setup the supported visual encoders: 1d /2d / r3m18/ r3m34/ r3m50
         """
-        if self.visual_keys == None:
+        if self.visual_keys is None:
             return
         else:
             # import torch only if environment with visual keys are used.
@@ -237,7 +237,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
 
             if "r3m" in id_encoder:
                 import_utils.torchvision_isavailable()
-                import torchvision.transforms as T
+                import torchvision.transforms as T  # noqa: F811
 
                 import_utils.r3m_isavailable()
                 from r3m import load_r3m
@@ -353,13 +353,13 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
         return self._forward(**kwargs)
 
     @implement_for("gym", "0.24", None)
-    def forward(self, **kwargs):
+    def forward(self, **kwargs):  # noqa: F811
         obs, reward, done, info = self._forward(**kwargs)
         terminal = done
         return obs, reward, terminal, False, info
 
     @implement_for("gymnasium")
-    def forward(self, **kwargs):
+    def forward(self, **kwargs):  # noqa: F811
         obs, reward, done, info = self._forward(**kwargs)
         terminal = done
         return obs, reward, terminal, False, info
@@ -416,7 +416,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
         t, obs = self.obsdict2obsvec(self.obs_dict, self.obs_keys)
         return obs
 
-    def get_visuals(
+    def get_visuals(   # noqa: C901
         self, sim=None, visual_keys: list = None, device_id: int = None
     ) -> dict:
         """
@@ -431,7 +431,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
             - 'rgb:cam_name:HxW:r3m50'
         """
         # return if no visual configured
-        if self.visual_keys == None:
+        if self.visual_keys is None:
             return None
 
         # default to observed sim
@@ -439,7 +439,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
             sim = self.sim_obsd
 
         # default to all visual keys
-        if visual_keys == None:
+        if visual_keys is None:
             visual_keys = self.visual_keys
 
         # default to env device
@@ -514,11 +514,11 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
         Get robot proprioception data. Usually incudes robot's onboard kinesthesia sensors (pos, vel, accn, etc)
         """
         # return if no proprio configured
-        if self.proprio_keys == None:
+        if self.proprio_keys is None:
             return None, None, None
 
         # pull out prioprio from the obs_dict
-        if obs_dict == None:
+        if obs_dict is None:
             obs_dict = self.obs_dict
         proprio_vec = np.zeros(0)
         proprio_dict = {}
@@ -596,11 +596,11 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
         return self._reset(reset_qpos=reset_qpos, reset_qvel=reset_qvel, **kwargs)
 
     @implement_for("gym", "0.26", None)
-    def reset(self, reset_qpos=None, reset_qvel=None, **kwargs):
+    def reset(self, reset_qpos=None, reset_qvel=None, **kwargs):  # noqa: F811
         return self._reset(reset_qpos=reset_qpos, reset_qvel=reset_qvel, **kwargs), {}
 
     @implement_for("gymnasium")
-    def reset(self, reset_qpos=None, reset_qvel=None, seed=None, **kwargs):
+    def reset(self, reset_qpos=None, reset_qvel=None, seed=None, **kwargs):  # noqa: F811
         return (
             self._reset(
                 reset_qpos=reset_qpos, reset_qvel=reset_qvel, seed=seed, **kwargs
@@ -631,7 +631,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
         )  # paths could have early termination before horizon
 
     @implement_for("gymnasium")
-    def _horizon(self):
+    def _horizon(self):  # noqa: F811
         return gym_registry_specs()[
             self.spec.id
         ].max_episode_steps  # gymnasium unwrapper overrides specs (https://github.com/Farama-Foundation/Gymnasium/issues/871)
@@ -731,10 +731,10 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
         """
         hor = paths[0]["rewards"].shape[0]
         for path in paths:
-            if path["done"][-1] == False:
+            if not path["done"][-1]:
                 path["terminated"] = False
                 terminated_idx = hor
-            elif path["done"][0] == False:
+            elif not path["done"][0]:
                 terminated_idx = sum(~path["done"]) + 1
                 for key in path.keys():
                     path[key] = path[key][: terminated_idx + 1, ...]
@@ -824,7 +824,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
             frames = np.zeros(
                 (horizon, frame_size[1], frame_size[0], 3), dtype=np.uint8
             )
-        elif render == None or render == "None" or render == "none":
+        elif render is None or render == "None" or render == "none":
             self.mujoco_render_frames = False
 
         # start rollouts
@@ -834,7 +834,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
             observations = []
             actions = []
             rewards = []
-            agent_infos = []
+            # agent_infos = []
             env_infos = []
 
             prompt("Episode %d" % ep, end=":> ", type=Prompt.INFO)
@@ -935,7 +935,7 @@ class MujocoEnv(gym.Env, gym.utils.EzPickle, ObsVecDict):
             frames = np.zeros(
                 (horizon, frame_size[1], frame_size[0], 3), dtype=np.uint8
             )
-        elif render == None or render == "None" or render == "none":
+        elif render is None or render == "None" or render == "none":
             self.mujoco_render_frames = False
 
         # start rollouts
