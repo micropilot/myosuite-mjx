@@ -10,7 +10,7 @@ class RoboSet_Trace(Trace):
         self.trace_type = TraceType.ROBOSET
 
     # parse path from robohive format into robopen dataset format
-    def path2dataset(self, path: dict, config_path=None) -> dict:
+    def path2dataset(self, path: dict, config_path=None) -> dict:  # noqa: C901
         """
         Convert RoboHive format into roboset format
         """
@@ -45,7 +45,6 @@ class RoboSet_Trace(Trace):
             dataset["data/user"] = path["env_infos/obs_dict/user"]
 
         # Derived =====
-        pose_ee = []
         if (
             "env_infos/obs_dict/pos_ee" in path_keys
             or "env_infos/obs_dict/rot_ee" in path_keys

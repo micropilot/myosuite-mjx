@@ -33,7 +33,7 @@ class TraceType(enum.Enum):
         """
         A more robust way of getting trace type. Supports strings
         """
-        if type(input_type) == str:
+        if isinstance(input_type, str):
             if input_type.lower() == "robohive":
                 return TraceType.ROBOHIVE
             elif input_type.lower() == "roboset":
@@ -66,7 +66,7 @@ class Trace:
 
     # Remove dataset from an existing group(s)
     def remove_dataset(self, group_keys: list, dataset_key: str):
-        if type(group_keys) == str:
+        if isinstance(group_keys, str):
             if group_keys == ":":
                 group_keys = self.trace.keys()
             else:
@@ -121,7 +121,7 @@ class Trace:
     # verify if a data can be a part of an existing datasets
     def verify_type(self, dataset, data):
         dataset_type = type(dataset[0])
-        assert type(data) == dataset_type, TypeError(
+        assert isinstance(data, dataset_type), TypeError(
             "Type mismatch while appending. Datum should be {}".format(dataset_type)
         )
 
@@ -145,15 +145,15 @@ class Trace:
         for grp_k, grp_v in self.trace.items():
             for dst_k, dst_v in grp_v.items():
                 # Check if stacked
-                if type(dst_v) == list:
+                if isinstance(dst_v, list):
                     return False
                 # check if flattened
-                if type(dst_v) == dict:
+                if isinstance(dst_v, dict):
                     return False
         return True
 
     # Render frames/videos
-    def render(
+    def render(  # noqa: C901
         self,
         output_dir,
         output_format,
@@ -169,7 +169,7 @@ class Trace:
         # input_fps         input fps of the provided dataset frames
 
         # Resolve groups
-        if type(groups) == str:
+        if isinstance(groups, str):
             if groups == ":":
                 groups = self.trace.keys()
             else:
@@ -183,10 +183,10 @@ class Trace:
         for i_grp, grp in enumerate(groups):
 
             # Pre allocate buffer
-            if type(self.trace[grp][datasets[0]]) == list:  # unstacked
+            if isinstance(self.trace[grp][datasets[0]], list):  # unstacked
                 horizon = len(self.trace[grp][datasets[0]])
                 height, width, _ = self.trace[grp][datasets[0]][0].shape
-            elif type(self.trace[grp][datasets[0]]) == np.ndarray:  # stacked
+            elif isinstance(self.trace[grp][datasets[0]], np.ndarray):  # stacked
                 horizon, height, width, _ = self.trace[grp][datasets[0]].shape
 
             frame_tile = np.zeros((height, width * len(datasets), 3), dtype=np.uint8)
@@ -239,12 +239,12 @@ class Trace:
         Enables indexing using either index(int) or keys(Trial0)
         Example: Data = Trace(); Data[0] == Data['Trial0']
         """
-        if type(index) == str:
+        if isinstance(index, str):
             assert (
                 index in self.trace.keys()
             ), f"Index({index}) not in existing keys({list(self.trace.keys())})"
             return self.trace[index]
-        elif type(index) == int:
+        elif isinstance(index, int):
             assert index < len(
                 self
             ), f"Index({index}) outside the max lenght({len(self)})"
@@ -306,18 +306,18 @@ class Trace:
                 disp += "{" + grp_k + ": \n"
                 for dst_k, dst_v in grp_v.items():
                     # raw
-                    if type(dst_v) == list:
+                    if isinstance(dst_v, list):
                         datum = dst_v[0]
                         try:
                             ll = datum.shape
-                        except:
+                        except:  # noqa: E722
                             ll = ()
                         disp += "\t{}:[{}_{}]_{}\n".format(
                             dst_k, str(type(dst_v[0])), ll, len(dst_v)
                         )
 
                     # flattened
-                    elif type(dst_v) == dict:
+                    elif isinstance(dst_v, dict):
                         datum = dst_v
                         disp += "\t{}: {}\n".format(dst_k, str(type(datum)))
 
@@ -334,9 +334,9 @@ class Trace:
     def stack(self):
         for grp_k, grp_v in self.trace.items():
             for dst_k, dst_v in grp_v.items():
-                if type(dst_v) == list and type(dst_v[0]) == dict:
+                if isinstance(dst_v, list) and isinstance(dst_v[0], dict):
                     grp_v[dst_k] = tensor_utils.stack_tensor_dict_list(dst_v)
-                elif type(dst_v) == list and type(dst_v[0]) != str:
+                elif isinstance(dst_v, list) and not isinstance(dst_v[0], str):
                     grp_v[dst_k] = np.array(dst_v)
 
     # Flatten

@@ -46,7 +46,7 @@ class ReferenceMotion:
         """
 
         self.motion_extrapolation = motion_extrapolation
-        self.np_random = random_generator if random_generator != None else np.random
+        self.np_random = random_generator if random_generator is not None else np.random
 
         # load reference
         self.reference = self.load(reference_data)
@@ -243,7 +243,7 @@ class ReferenceMotion:
         """
         return self.reference["robot_init"], self.reference["object_init"]
 
-    def get_reference(self, time):
+    def get_reference(self, time):  # noqa: C901
         """
         Return the reference at the given time. Linearly interpolate if there is no exact match
         """

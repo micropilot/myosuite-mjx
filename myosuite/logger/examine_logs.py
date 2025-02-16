@@ -128,7 +128,7 @@ import os
     default=False,
     help=("Include exteroception"),
 )
-def examine_logs(
+def examine_logs(  # noqa: C901
     env_name,
     rollout_path,
     rollout_format,
@@ -153,7 +153,7 @@ def examine_logs(
     np.random.seed(seed)
     env = (
         gym.make(env_name)
-        if env_args == None
+        if env_args is None
         else gym.make(env_name, **(eval(env_args)))
     )
     env = env.unwrapped
@@ -195,7 +195,7 @@ def examine_logs(
         env.mujoco_render_frames = True
     elif render == "offscreen":
         env.mujoco_render_frames = False
-    elif render == None:
+    elif render is None:
         env.mujoco_render_frames = False
 
     # Rollout paths
