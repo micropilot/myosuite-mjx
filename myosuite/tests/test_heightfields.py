@@ -26,6 +26,8 @@ class TestHeightfields(unittest.TestCase):
             sim=sim, 
             rng=np_random,
             hills_range=(0.0, 0.1),
+            rough_range=(0.0, 0.1),
+            relief_range=(0.0, 0.1),
             )
 
     def _create_trackfield(self, seed):
