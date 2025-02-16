@@ -17,3 +17,4 @@ gymnax
 brax
 torch
 tensorboard
+pytest
