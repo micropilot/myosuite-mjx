@@ -581,17 +581,6 @@ for task_name, robot_name, object_name, motion_path in MyoHand_task_spec:
     register_myohand_object_trackref(task_name, object_name, motion_path)
 
 
-register(
-    id="MyoHandCubesmallLift-v0",
-    entry_point="myosuite.envs.myo.myodm.myodm_cube_grasp_v0:MyoHandCubeLiftEnv",
-    max_episode_steps=1000,
-    kwargs={
-        "model_path": "/../assets/hand/myohand_object.xml",
-        "object_name": "cubesmall",
-        "reference": curr_dir + "/data/MyoHand_cubesmall_lift.npz",
-    },
-)
-
 OBJECTS = (
     "airplane",
     "alarmclock",
