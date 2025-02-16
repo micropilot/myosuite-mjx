@@ -27,13 +27,13 @@ class BimanualEnvV1(BaseV0):
                         "object_qvel", "touching_body"]
 
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
-        "done": 0,
-        "act_reg": 0,
-        "sparse": 0,
-        "solved": 1,
-        "alive": 1,
-        "pos_dist": 100.0,
-        "rot_dist": 1.0
+        "reach_dist": -.1,
+        "act": 0,
+        "fin_dis": -0.5,
+        # "fin_open": -1,
+        # "lift_height": 2,
+        "pass_err": -1,
+        # "lift_bonus": 1,
     }
 
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):

@@ -43,47 +43,6 @@ register_env_with_variants(id='myoChallengeBimanual-v0',
             'obj_friction_change': (0.1, 0.001, 0.00002)  # nominal: 1.0, 0.005, 0.0001
         }
     )
-    
-
-register_env_with_variants(id='myoReachBimanual-v0',
-        entry_point='myosuite.envs.myo.myochallenge.bimanual_reach_v0:BimanualReachV0',
-        max_episode_steps=1000,
-        kwargs={
-            'model_path': curr_dir + '/../assets/arm/myoarm_bionic_bimanual_reach.xml',
-            'normalize_act': True,
-            'frame_skip': 5
-        }
-    )
-
-register_env_with_variants(id='myoReachGoalBimanual-v0',
-        entry_point='myosuite.envs.myo.myochallenge.bimanual_reach_goal_v0:BimanualReachGoalV0',
-        max_episode_steps=1000,
-        kwargs={
-            'model_path': curr_dir + '/../assets/arm/myoarm_bionic_bimanual_reach.xml',
-            'normalize_act': True,
-            'frame_skip': 5
-        }
-    )
-
-register_env_with_variants(id='myoGraspBimanual-v0',
-        entry_point='myosuite.envs.myo.myochallenge.myohand_grasp_v0:BimanualGraspEnvV1',
-        max_episode_steps=1000,
-        kwargs={
-            'model_path': curr_dir + '/../assets/arm/myoarm_bionic_bimanual.xml',
-            'normalize_act': True,
-            'frame_skip': 5
-        }
-    )
-
-register_env_with_variants(id='myoGraspGoalBimanual-v0',
-        entry_point='myosuite.envs.myo.myochallenge.myohand_grasp_to_goal_v0:BimanualGraspGoalEnvV1',
-        max_episode_steps=1000,
-        kwargs={
-            'model_path': curr_dir + '/../assets/arm/myoarm_bionic_grasp_to_goal.xml',
-            'normalize_act': True,
-            'frame_skip': 5
-        }
-    )
 
 
 # MyoChallenge 2024 envs ==============================================
