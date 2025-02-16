@@ -17,5 +17,4 @@ gymnax
 brax
 torch
 tensorboard
-pytest
 stable-baselines3
