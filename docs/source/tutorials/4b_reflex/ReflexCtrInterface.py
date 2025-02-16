@@ -12,8 +12,6 @@ from reflexCtr import LocoCtrl
 
 from myosuite.utils import gym
 
-import numpy as np
-
 from myosuite.utils.quat_math import quat2euler
 from myosuite.utils.quat_math import euler2quat
 
@@ -61,7 +59,7 @@ class MyoLegReflex(object):
 
         self.env = gym.make("myoLegStandRandom-v0", normalize_act=False)
 
-        print(f"Seed added - ", seed)
+        print(f"Seed added - {seed}")
         self.env.reset()
         self.env.seed(seed)
 

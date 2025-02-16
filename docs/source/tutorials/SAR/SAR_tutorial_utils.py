@@ -16,11 +16,6 @@ from tqdm import tqdm
 import joblib
 
 from typing import Callable
-import numpy as np
-import os
-from base64 import b64encode
-from IPython.display import HTML
-import joblib
 import matplotlib.pyplot as plt
 import warnings
 
@@ -232,7 +227,7 @@ def plot_results(smoothing=1000, experiment="locomotion", terrain=None):
             suc = smooth(suc, smth)[:-smth]
             plt.plot(range(len(suc)), suc, linewidth=2.5, label="RL-E2E")
 
-        plt.title(f"Success comparison on Reorient100", size=17)
+        plt.title("Success comparison on Reorient100", size=17)
 
     else:
         raise ValueError("experiment must be either 'locomotion' or 'manipulation'")

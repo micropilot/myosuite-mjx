@@ -399,7 +399,7 @@ class LocoCtrl(object):
             self.stim[s_leg] = self.spinal_control_leg(s_leg, sensor_data)
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _update_spinal_control_phase(self, s_leg, sensor_data):
+    def _update_spinal_control_phase(self, s_leg, sensor_data):  # noqa: C901
         s_l = sensor_data[s_leg]
 
         alpha_tgt = self.brain_command[s_leg]["alpha_tgt"]
@@ -476,7 +476,6 @@ class LocoCtrl(object):
         cp = self.cp[s_leg]
 
         ph_st = self.spinal_control_phase[s_leg]["ph_st"]
-        ph_st_csw = self.spinal_control_phase[s_leg]["ph_st_csw"]
         ph_st_sw0 = self.spinal_control_phase[s_leg]["ph_st_sw0"]
         ph_st_st = self.spinal_control_phase[s_leg]["ph_st_st"]
         ph_sw = self.spinal_control_phase[s_leg]["ph_sw"]
