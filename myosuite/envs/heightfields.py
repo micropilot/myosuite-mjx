@@ -257,8 +257,8 @@ class ChaseTagField(HeightField):
         Fill patch at position <i> ,<j> with terrain <type>
         """
         self.hfield.data[
-            i * self.patch_size : i * self.patch_size + self.patch_size,
-            j * self.patch_size : j * self.patch_size + self.patch_size,
+            i * self.patch_size: i * self.patch_size + self.patch_size,
+            j * self.patch_size: j * self.patch_size + self.patch_size,
         ] = self._compute_patch_data(terrain_type)
 
     def sample(self, rng=None):
@@ -266,10 +266,10 @@ class ChaseTagField(HeightField):
         Sample an entire heightfield for the episode.
         Update geom in viewer if rendering.
         """
-        if not rng is None:
+        if rng:
             self.rng = rng
         self._populate_patches()
-        if hasattr(self.sim, "renderer") and not self.sim.renderer._window is None:
+        if hasattr(self.sim, "renderer") and self.sim.renderer._window:
             self.sim.renderer._window.update_hfield(0)
 
     # Patch types  ---------------
@@ -351,11 +351,11 @@ class TrackField(HeightField):
         Update geom in viewer if rendering.
         The terrain is cleared before updating.
         """
-        if not rng is None:
+        if rng:
             self.rng = rng
         self._clear_terrain()
         self._fill_terrain()
-        if hasattr(self.sim, "renderer") and not self.sim.renderer._window is None:
+        if hasattr(self.sim, "renderer") and self.sim.renderer._window:
             self.sim.renderer._window.update_hfield(0)
 
     def _clear_terrain(self):
@@ -392,9 +392,11 @@ class TrackField(HeightField):
             # random mixed terrain type
             n_patches = 24
             patch_starts = np.arange(0, self.nrow, int(self.nrow // n_patches))
-            terrain_fn = lambda patch_start, patch_end, i: terrain_fn_list[
-                self.rng.choice(n_types)
-            ][0](patch_start, patch_end, i)
+
+            def terrain_function(patch_start, patch_end, i):
+                return terrain_fn_list[self.rng.choice(n_types)][0](patch_start, patch_end, i)
+
+            terrain_fn = terrain_function
             self.terrain_type = TrackTypes.MIXED
         else:
             raise ValueError(f"Invalid reset type: {self.reset_type}")
@@ -420,7 +422,7 @@ class TrackField(HeightField):
             else:
                 height -= stair_height
         stair_parts = np.concatenate(stair_parts, axis=0)
-        self.hfield.data[patch_start : patch_start + stair_parts.shape[0]] = stair_parts
+        self.hfield.data[patch_start: patch_start + stair_parts.shape[0]] = stair_parts
 
     def _compute_hilly_track(self, patch_start, patch_end, i):
         """

@@ -21,12 +21,12 @@ def gym_registry_specs():
 
 
 @implement_for("gym", "0.24", None)
-def gym_registry_specs():
+def gym_registry_specs():  # noqa: F811
     return gym.envs.registry
 
 
 @implement_for("gymnasium")
-def gym_registry_specs():
+def gym_registry_specs():  # noqa: F811
     return gym.envs.registry
 
 
@@ -40,7 +40,7 @@ def _update_env_spec_kwarg(env_variant_specs, variants, override_keys):
 
 
 @implement_for("gym", "0.24", None)
-def _update_env_spec_kwarg(env_variant_specs, variants, override_keys):
+def _update_env_spec_kwarg(env_variant_specs, variants, override_keys):  # noqa: F811
     env_variant_specs.kwargs, variants_update_keyval_str = update_dict(
         env_variant_specs.kwargs, variants, override_keys=override_keys
     )
@@ -48,7 +48,7 @@ def _update_env_spec_kwarg(env_variant_specs, variants, override_keys):
 
 
 @implement_for("gymnasium")
-def _update_env_spec_kwarg(env_variant_specs, variants, override_keys):
+def _update_env_spec_kwarg(env_variant_specs, variants, override_keys):  # noqa: F811
     env_variant_specs.kwargs, variants_update_keyval_str = update_dict(
         env_variant_specs.kwargs, variants, override_keys=override_keys
     )
@@ -61,12 +61,12 @@ def _entry_point(env_variant_specs):
 
 
 @implement_for("gym", "0.24", None)
-def _entry_point(env_variant_specs):
+def _entry_point(env_variant_specs):  # noqa: F811
     return env_variant_specs.entry_point
 
 
 @implement_for("gymnasium")
-def _entry_point(env_variant_specs):
+def _entry_point(env_variant_specs):  # noqa: F811
     return env_variant_specs.entry_point
 
 
@@ -76,12 +76,12 @@ def _kwargs(env_variant_specs):
 
 
 @implement_for("gym", "0.24", None)
-def _kwargs(env_variant_specs):
+def _kwargs(env_variant_specs):  # noqa: F811
     return env_variant_specs.kwargs
 
 
 @implement_for("gymnasium")
-def _kwargs(env_variant_specs):
+def _kwargs(env_variant_specs):  # noqa: F811
     return env_variant_specs.kwargs
 
 
