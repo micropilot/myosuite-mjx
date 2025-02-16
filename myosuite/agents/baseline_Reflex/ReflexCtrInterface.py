@@ -11,8 +11,6 @@ import numpy as np
 from reflexCtr import LocoCtrl
 
 import gym
-
-import numpy as np
 import os
 
 from myosuite.envs.env_variants import register_env_variant
@@ -64,7 +62,7 @@ class MyoLegReflex(object):
         register_env_variant(
             env_id="myoLegDemo-v0",
             variants={
-                "model_path": curr_dir + "/../../simhive/myo_sim/leg/myolegs.xml",
+                "model_path": f"{curr_dir}/../../simhive/myo_sim/leg/myolegs.xml",
                 "normalize_act": False,
             },
             variant_id="MyoLegReflex-v0",
@@ -72,8 +70,8 @@ class MyoLegReflex(object):
         )
         self.env = gym.make("MyoLegReflex-v0")
 
-        print(f"Seed added - ", seed)
-        print("List of cameras available", self.env.sim.model.camera_names)
+        print(f"Seed added - {seed}")
+        print(f"List of cameras available {self.env.sim.model.camera_names}")
         self.env.reset()
         self.env.seed(seed)
 
@@ -215,7 +213,8 @@ class MyoLegReflex(object):
             )
 
             # Formula: -obs_dict[s_leg]['d_joint']['hip_abd'] + .5*np.pi
-            # Since adduction (with D) in Mujoco is positive, need to change the sign. The formula below preserves the relation to the formula above
+            # Since adduction (with D) in Mujoco is positive, need to change the sign.
+            # The formula below preserves the relation to the formula above
             sensor_data[s_leg]["alpha_f"] = (
                 -1
                 * (-1 * self.env.sim.data.get_joint_qpos(f"hip_adduction_{s_leg[0]}"))
@@ -540,7 +539,6 @@ class MyoLegReflex(object):
                 self.muscle_Fmax[x][y] = self.env.sim.model.actuator_biasprm[
                     self.muscles_dict[x][y], 2
                 ].copy()
-                # print(x, ' ', y, ' with', np.sum(self.env.sim.model.actuator_biasprm[self.muscles_dict[x][y],2]))
                 self.muscle_L0[x][y] = temp_L0[self.muscles_dict[x][y]]
 
     def _set_initial_pose(self, init_dict):
@@ -573,7 +571,8 @@ class MyoLegReflex(object):
         # Offset index of 7, 1st 7 elements are the 3D pos and quad of the free root joint
 
         # offset will change if indexing function changes
-        # env.sim.model.joint_name2id - Takes into consideration that there is a root joint. (Uses an offset of +6 instead)
+        # env.sim.model.joint_name2id - Takes into consideration that there is a root joint. 
+        # (Uses an offset of +6 instead)
         # env.sim.model.joint_names.index - Uses only the joint_name property to perform indexing
 
         temp_offset = 7
@@ -639,7 +638,6 @@ class MyoLegReflex(object):
 
         for s_leg in legs:
             for musc in musc_idx:
-                # print(f"Leg - {s_leg}, Musc - {musc}, Idx - {self.muscles_dict[s_leg][musc]}, values - {output[s_leg][musc]}")
                 mus_act[self.muscles_dict[s_leg][musc]] = output[s_leg][musc]
 
         return mus_act

@@ -476,7 +476,7 @@ class LocoCtrl(object):
         cp = self.cp[s_leg]
 
         ph_st = self.spinal_control_phase[s_leg]["ph_st"]
-        ph_st_csw = self.spinal_control_phase[s_leg]["ph_st_csw"]
+        # ph_st_csw = self.spinal_control_phase[s_leg]["ph_st_csw"]
         ph_st_sw0 = self.spinal_control_phase[s_leg]["ph_st_sw0"]
         ph_st_st = self.spinal_control_phase[s_leg]["ph_st_st"]
         ph_sw = self.spinal_control_phase[s_leg]["ph_sw"]
