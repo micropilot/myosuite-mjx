@@ -307,7 +307,7 @@ class RunTrack(WalkEnvV0):
 
         # active task
         # trackfield view of 10x10 grid of points around agent. Reshape to (10, 10) for visual inspection
-        if not self.trackfield is None:
+        if self.trackfield is not None:
             obs_dict["hfield"] = self.trackfield.get_heightmap_obs()
 
         return obs_dict
@@ -424,14 +424,14 @@ class RunTrack(WalkEnvV0):
         """
         if self.trackfield is not None:
             self.trackfield.flatten_agent_patch(qpos)
-            if hasattr(self.sim, "renderer") and not self.sim.renderer._window is None:
+            if hasattr(self.sim, "renderer") and self.sim.renderer._window is not None:
                 self.sim.renderer._window.update_hfield(0)
 
     def _maybe_sample_terrain(self):
         """
         Sample a new terrain if the terrain type asks for it.
         """
-        if not self.trackfield is None:
+        if self.trackfield is not None:
             self.trackfield.sample(self.np_random)
             self.sim.model.geom_rgba[self.sim.model.geom_name2id("terrain")][-1] = 1.0
             self.sim.model.geom_pos[self.sim.model.geom_name2id("terrain")] = np.array(
@@ -838,7 +838,7 @@ class RunTrack(WalkEnvV0):
             if temp_sens_height > self.sim.data.site(sens_site).xpos[2]:
                 temp_sens_height = self.sim.data.site(sens_site).xpos[2].copy()
 
-        if not self.trackfield is None:
+        if self.trackfield is not None:
             diff_height = 0.005 - temp_sens_height
         else:
             diff_height = 0.0 - temp_sens_height

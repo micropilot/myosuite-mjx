@@ -103,7 +103,7 @@ class ObsVecDict:
             len(obsvec.shape) == 3
         ), "obsvec should be of shape (num_traj, horizon, obs_dim)"
         assert (
-            self.initialized == True
+            self.initialized
         ), "ObsVecDict has not been initialized. Call initialize() first "
         obs_dict = {}
         for key in self.ordered_obs_keys:

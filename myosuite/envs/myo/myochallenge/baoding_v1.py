@@ -347,7 +347,7 @@ class BaodingEnvV1(BaseV0):
         )
 
         # reset goal
-        if time_period == None:
+        if time_period is None:
             time_period = self.np_random.uniform(
                 low=self.goal_time_period[0], high=self.goal_time_period[1]
             )

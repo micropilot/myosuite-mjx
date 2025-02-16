@@ -121,12 +121,12 @@ class TrackEnv(BaseV0):
 
         ##########################################
         self.lift_bonus_thresh = 0.02
-        ### PRE-GRASP
+        # PRE-GRASP
         self.obj_err_scale = 50
         self.base_err_scale = 40
         self.lift_bonus_mag = 1  # 2.5
 
-        ### DEEPMIMIC
+        # DEEPMIMIC
         self.qpos_reward_weight = 0.35
         self.qpos_err_scale = 5.0
 
@@ -161,7 +161,7 @@ class TrackEnv(BaseV0):
         )
 
         # Adjust horizon if not motion_extrapolation
-        if motion_extrapolation == False:
+        if motion_extrapolation is False:
             self.spec.max_episode_steps = self.ref.horizon  # doesn't work always. WIP
 
         # Adjust init as per the specified key
@@ -207,19 +207,19 @@ class TrackEnv(BaseV0):
         obs_dict["qv"] = sim.data.qvel.copy()
         obs_dict["robot_err"] = obs_dict["qp"][:-6].copy() - curr_ref.robot
 
-        ## info about current hand pose + vel
+        # info about current hand pose + vel
         obs_dict["curr_hand_qpos"] = sim.data.qpos[
             :-6
-        ].copy()  ## assuming only 1 object and the last values are posision + rotation
-        obs_dict["curr_hand_qvel"] = sim.data.qvel[:-6].copy()  ## not used for now
+        ].copy()  # assuming only 1 object and the last values are posision + rotation
+        obs_dict["curr_hand_qvel"] = sim.data.qvel[:-6].copy()  # not used for now
 
-        ## info about target hand pose + vel
+        # info about target hand pose + vel
         obs_dict["targ_hand_qpos"] = curr_ref.robot
         obs_dict["targ_hand_qvel"] = (
             np.array([0]) if curr_ref.robot_vel is None else curr_ref.robot_vel
         )
 
-        ## info about current object com + rotations
+        # info about current object com + rotations
         obs_dict["curr_obj_com"] = self.sim.data.xipos[self.object_bid].copy()
         obs_dict["curr_obj_rot"] = mat2quat(
             np.reshape(self.sim.data.ximat[self.object_bid].copy(), (3, 3))
@@ -229,11 +229,11 @@ class TrackEnv(BaseV0):
 
         obs_dict["base_error"] = obs_dict["curr_obj_com"] - obs_dict["wrist_err"]
 
-        ## info about target object com + rotations
+        # info about target object com + rotations
         obs_dict["targ_obj_com"] = curr_ref.object[:3]
         obs_dict["targ_obj_rot"] = curr_ref.object[3:]
 
-        ## Errors
+        # Errors
         obs_dict["hand_qpos_err"] = (
             obs_dict["curr_hand_qpos"] - obs_dict["targ_hand_qpos"]
         )
@@ -360,10 +360,3 @@ class TrackEnv(BaseV0):
         return (
             obj_term or qpos_term or base_term
         )  # combining termination for object + posture
-
-
-from myosuite.utils import gym
-
-env = gym.make("MyoHandAirplaneFly-v0")
-env.reset()
-env.step(env.action_space.sample())

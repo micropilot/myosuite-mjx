@@ -570,7 +570,7 @@ class ChaseTagEnvV0(WalkEnvV0):
                 self.opponent.repeller_vel_range[0]
                 <= self.opponent.repeller_vel_range[1]
             ), f"Repeller velocity range is not valid {self.opponent.repeller_vel_range}"
-        if self.repeller_opponent == True:
+        if self.repeller_opponent:
             assert (
                 len(self.opponent.opponent_probabilities) == 4
             ), "Repeller opponent requires 4 probabilities"
@@ -609,7 +609,7 @@ class ChaseTagEnvV0(WalkEnvV0):
         # active task
         obs_dict["task"] = np.array(self.current_task.value, ndmin=2, dtype=np.int16)
         # heightfield view of 10x10 grid of points around agent. Reshape to (10, 10) for visual inspection
-        if not self.heightfield is None:
+        if self.heightfield:
             obs_dict["hfield"] = self.heightfield.get_heightmap_obs()
 
         return obs_dict
@@ -718,7 +718,7 @@ class ChaseTagEnvV0(WalkEnvV0):
         """
         if self.heightfield is not None:
             self.heightfield.flatten_agent_patch(qpos)
-            if hasattr(self.sim, "renderer") and not self.sim.renderer._window is None:
+            if hasattr(self.sim, "renderer") and self.sim.renderer._window:
                 self.sim.renderer._window.update_hfield(0)
 
     def _sample_task(self):
@@ -731,7 +731,7 @@ class ChaseTagEnvV0(WalkEnvV0):
         """
         Sample a new terrain if the terrain type asks for it.
         """
-        if not self.heightfield is None:
+        if self.heightfield is not None:
             self.heightfield.sample(self.np_random)
             self.sim.model.geom_rgba[self.sim.model.geom_name2id("terrain")][-1] = 1.0
             self.sim.model.geom_pos[self.sim.model.geom_name2id("terrain")] = np.array(

@@ -490,7 +490,7 @@ class BimanualEnvV1(BaseV0):
             reset_qpos=self.init_qpos, reset_qvel=self.init_qvel, **kwargs
         )
         object_qpos_adr = self.sim.model.body(self.obj_bid).jntadr[0]
-        self.sim.data.qpos[object_qpos_adr : object_qpos_adr + 3] = (
+        self.sim.data.qpos[object_qpos_adr: object_qpos_adr + 3] = (
             self.start_pos + np.array([0, 0, 0.1])
         )
         self.init_obj_z = self.sim.data.site_xpos[self.obj_sid][-1]
@@ -617,6 +617,6 @@ def evaluate_contact_trajectory(contact_trajectory: List[set]):
 
     # Check if only goal was touching object for the last CONTACT_TRAJ_MIN_LENGTH frames
     elif not np.all(
-        [{ObjLabels.GOAL} == s for s in contact_trajectory[-GOAL_CONTACT + 2 :]]
+        [{ObjLabels.GOAL} == s for s in contact_trajectory[-GOAL_CONTACT + 2:]]
     ):  # Subtract 2 from the calculation to maintain a buffer zone around trajectory boundaries for safety/accuracy.
         return ContactTrajIssue.NO_GOAL

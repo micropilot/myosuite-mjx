@@ -237,7 +237,7 @@ register_env_with_variants(
 )
 
 
-## MyoChallenge Locomotion P1
+# MyoChallenge Locomotion P1
 register_env_with_variants(
     id="myoChallengeChaseTagP1-v0",
     entry_point="myosuite.envs.myo.myochallenge.chasetag_v0:ChaseTagEnvV0",
