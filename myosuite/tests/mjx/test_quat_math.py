@@ -6,8 +6,16 @@ import jax.numpy as jp
 # Configure JAX to use CPU to avoid potential GPU-related issues
 jax.config.update('jax_platform_name', 'cpu')
 
-from myosuite.utils.quat_math import mulQuat as np_mulQuat, negQuat as np_negQuat, quat2Vel as np_quat2Vel, diffQuat as np_diffQuat
-from myosuite.mjx.quat_math import mulQuat as jax_mulQuat, negQuat as jax_negQuat, quat2Vel as jax_quat2Vel, diffQuat as jax_diffQuat
+from myosuite.utils.quat_math import (mulQuat as np_mulQuat, negQuat as np_negQuat, 
+                                     quat2Vel as np_quat2Vel, diffQuat as np_diffQuat,
+                                     quatDiff2Vel as np_quatDiff2Vel, 
+                                     axis_angle2quat as np_axis_angle2quat,
+                                     euler2mat as np_euler2mat)
+from myosuite.mjx.quat_math import (mulQuat as jax_mulQuat, negQuat as jax_negQuat, 
+                                   quat2Vel as jax_quat2Vel, diffQuat as jax_diffQuat,
+                                   quatDiff2Vel as jax_quatDiff2Vel,
+                                   axis_angle2quat as jax_axis_angle2quat,
+                                   euler2mat as jax_euler2mat)
 
 
 class TestQuatMath(unittest.TestCase):
@@ -116,6 +124,89 @@ class TestQuatMath(unittest.TestCase):
             np.array([0.7071067811865476, 0., 0.7071067811865476, 0.], dtype=np.float32),  # 90-deg y
             np.array([0., 0., 0., 1.], dtype=np.float32),  # 180-deg z
             np.array([0., -1., 0., 0.], dtype=np.float32),  # Result for arbitrary case
+        ]
+
+        # Add test cases for quatDiff2Vel
+        self.diff2vel_test_cases = [
+            # No rotation difference
+            (np.array([1., 0., 0., 0.], dtype=np.float32),  # Identity
+             np.array([1., 0., 0., 0.], dtype=np.float32)),  # Identity
+            
+            # 90-degree rotation difference around x-axis
+            (np.array([1., 0., 0., 0.], dtype=np.float32),  # Identity
+             np.array([0.7071067811865476, 0.7071067811865476, 0., 0.], dtype=np.float32)),
+            
+            # 90-degree rotation difference around y-axis
+            (np.array([1., 0., 0., 0.], dtype=np.float32),  # Identity
+             np.array([0.7071067811865476, 0., 0.7071067811865476, 0.], dtype=np.float32)),
+            
+            # 180-degree rotation difference around z-axis
+            (np.array([1., 0., 0., 0.], dtype=np.float32),  # Identity
+             np.array([0., 0., 0., 1.], dtype=np.float32)),
+            
+            # Arbitrary rotation difference
+            (np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float32),
+             np.array([0.5, -0.5, 0.5, -0.5], dtype=np.float32)),
+        ]
+
+        # Expected results for quatDiff2Vel (dt=1.0)
+        self.diff2vel_expected_results = [
+            # No rotation: zero angular velocity
+            (0.0, np.array([0., 0., 0.], dtype=np.float32)),
+            
+            # 90-degree rotation around x: pi/2 speed, [1,0,0] axis
+            (np.pi/2, np.array([1., 0., 0.], dtype=np.float32)),
+            
+            # 90-degree rotation around y: pi/2 speed, [0,1,0] axis
+            (np.pi/2, np.array([0., 1., 0.], dtype=np.float32)),
+            
+            # 180-degree rotation around z: pi speed, [0,0,1] axis
+            (np.pi, np.array([0., 0., 1.], dtype=np.float32)),
+            
+            # Arbitrary rotation: specific values
+            (np.pi, np.array([1., 0., 0.], dtype=np.float32)),
+        ]
+
+        # Add test cases for axis_angle2quat
+        self.axis_angle_test_cases = [
+            # No rotation
+            (np.array([1., 0., 0.], dtype=np.float32), 0.0),
+            
+            # 90-degree rotations around principal axes
+            (np.array([1., 0., 0.], dtype=np.float32), np.pi/2),
+            (np.array([0., 1., 0.], dtype=np.float32), np.pi/2),
+            (np.array([0., 0., 1.], dtype=np.float32), np.pi/2),
+            
+            # 180-degree rotation
+            (np.array([0., 0., 1.], dtype=np.float32), np.pi),
+            
+            # 45-degree rotation around arbitrary axis
+            (np.array([1., 1., 1.], dtype=np.float32)/np.sqrt(3), np.pi/4),
+        ]
+
+        # Expected results for axis_angle2quat
+        self.axis_angle_expected_results = [
+            np.array([1., 0., 0., 0.], dtype=np.float32),
+            np.array([0.7071067811865476, 0.7071067811865476, 0., 0.], dtype=np.float32),
+            np.array([0.7071067811865476, 0., 0.7071067811865476, 0.], dtype=np.float32),
+            np.array([0.7071067811865476, 0., 0., 0.7071067811865476], dtype=np.float32),
+            np.array([0., 0., 0., 1.], dtype=np.float32),
+            np.array([0.92387953, 0.22094238, 0.22094238, 0.22094238], dtype=np.float32),
+        ]
+
+        # Add test cases for euler2mat
+        self.euler_test_cases = [
+            # No rotation
+            np.array([0., 0., 0.], dtype=np.float32),
+            
+            # 90-degree rotations around single axes
+            np.array([np.pi/2, 0., 0.], dtype=np.float32),
+            np.array([0., np.pi/2, 0.], dtype=np.float32),
+            np.array([0., 0., np.pi/2], dtype=np.float32),
+            
+            # Combined rotations
+            np.array([np.pi/4, np.pi/4, 0.], dtype=np.float32),
+            np.array([np.pi/3, np.pi/6, np.pi/2], dtype=np.float32),
         ]
 
     def test_mulQuat_implementations_match(self):
@@ -395,6 +486,252 @@ class TestQuatMath(unittest.TestCase):
                 
         except Exception as e:
             print(f"Error in diffQuat properties test: {str(e)}")
+            raise
+
+    def test_quatDiff2Vel_implementations_match(self):
+        """Test that JAX and NumPy implementations of quatDiff2Vel give the same results"""
+        try:
+            for (q1, q2), (expected_speed, expected_axis) in zip(self.diff2vel_test_cases, 
+                                                                self.diff2vel_expected_results):
+                # Convert inputs to JAX arrays
+                print(f"\nTesting quatDiff2Vel with inputs: q1={q1}, q2={q2}")
+                q1_jax = jp.array(q1, dtype=jp.float32)
+                q2_jax = jp.array(q2, dtype=jp.float32)
+                
+                # Test with different dt values
+                for dt in [1.0, 0.5, 0.1]:
+                    # Compute results from both implementations
+                    speed_np, axis_np = np_quatDiff2Vel(q1, q2, dt)
+                    speed_jax, axis_jax = jax_quatDiff2Vel(q1_jax, q2_jax, dt)
+                    
+                    print(f"dt={dt}")
+                    print(f"NumPy result: speed={speed_np}, axis={axis_np}")
+                    print(f"JAX result: speed={speed_jax}, axis={axis_jax}")
+                    
+                    # Convert JAX results to numpy for comparison
+                    speed_jax = float(speed_jax)
+                    axis_jax = np.array(axis_jax)
+                    
+                    # Compare results
+                    np.testing.assert_allclose(
+                        speed_np, 
+                        speed_jax, 
+                        rtol=1e-5, 
+                        atol=1e-5,
+                        err_msg=f"Speed doesn't match for q1={q1}, q2={q2}, dt={dt}"
+                    )
+                    np.testing.assert_allclose(
+                        np.abs(axis_np), 
+                        np.abs(axis_jax), 
+                        rtol=1e-5, 
+                        atol=1e-5,
+                        err_msg=f"Axis doesn't match for q1={q1}, q2={q2}, dt={dt}"
+                    )
+                    
+                    # For dt=1.0, also check against expected results
+                    if dt == 1.0:
+                        np.testing.assert_allclose(
+                            speed_jax, 
+                            expected_speed, 
+                            rtol=1e-5, 
+                            atol=1e-5,
+                            err_msg=f"Speed doesn't match expected for q1={q1}, q2={q2}"
+                        )
+                        np.testing.assert_allclose(
+                            np.abs(axis_jax), 
+                            np.abs(expected_axis), 
+                            rtol=1e-5, 
+                            atol=1e-5,
+                            err_msg=f"Axis doesn't match expected for q1={q1}, q2={q2}"
+                        )
+                    
+        except Exception as e:
+            print(f"Error in quatDiff2Vel test: {str(e)}")
+            raise
+
+    def test_quatDiff2Vel_properties(self):
+        """Test mathematical properties of quaternion difference to velocity conversion"""
+        try:
+            for q1, q2 in self.diff2vel_test_cases:
+                q1_jax = jp.array(q1, dtype=jp.float32)
+                q2_jax = jp.array(q2, dtype=jp.float32)
+                
+                # Property 1: Zero velocity for identical quaternions
+                speed, axis = jax_quatDiff2Vel(q1_jax, q1_jax, dt=1.0)
+                np.testing.assert_allclose(
+                    float(speed),
+                    0.0,
+                    atol=1e-5,
+                    err_msg=f"Non-zero speed for identical quaternions: q={q1}"
+                )
+                
+                # Property 2: Scaling with dt
+                speed1, axis1 = jax_quatDiff2Vel(q1_jax, q2_jax, dt=1.0)
+                speed2, axis2 = jax_quatDiff2Vel(q1_jax, q2_jax, dt=2.0)
+                np.testing.assert_allclose(
+                    float(speed1),
+                    2 * float(speed2),
+                    rtol=1e-5,
+                    err_msg=f"Speed scaling with dt failed for q1={q1}, q2={q2}"
+                )
+                np.testing.assert_allclose(
+                    np.abs(np.array(axis1)),
+                    np.abs(np.array(axis2)),
+                    rtol=1e-5,
+                    err_msg=f"Axis changed with dt for q1={q1}, q2={q2}"
+                )
+                
+        except Exception as e:
+            print(f"Error in quatDiff2Vel properties test: {str(e)}")
+            raise
+
+    def test_axis_angle2quat_implementations_match(self):
+        """Test that JAX and NumPy implementations of axis_angle2quat give the same results"""
+        try:
+            for (axis, angle), expected_result in zip(self.axis_angle_test_cases, 
+                                                     self.axis_angle_expected_results):
+                # Convert inputs to JAX arrays
+                print(f"\nTesting axis_angle2quat with inputs: axis={axis}, angle={angle}")
+                axis_jax = jp.array(axis, dtype=jp.float32)
+                
+                # Compute results from both implementations
+                result_np = np_axis_angle2quat(axis, angle)
+                result_jax = jax_axis_angle2quat(axis_jax, angle)
+                
+                print(f"NumPy result: {result_np}")
+                print(f"JAX result: {result_jax}")
+                print(f"Expected result: {expected_result}")
+                
+                # Convert JAX result to numpy for comparison
+                result_jax = np.array(result_jax)
+                
+                # Compare results
+                np.testing.assert_allclose(
+                    np.abs(result_np), 
+                    np.abs(result_jax), 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Results don't match for axis={axis}, angle={angle}"
+                )
+                
+                # Compare with expected results
+                np.testing.assert_allclose(
+                    np.abs(result_jax), 
+                    np.abs(expected_result), 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Result doesn't match expected for axis={axis}, angle={angle}"
+                )
+                
+        except Exception as e:
+            print(f"Error in axis_angle2quat test: {str(e)}")
+            raise
+
+    def test_euler2mat_implementations_match(self):
+        """Test that JAX and NumPy implementations of euler2mat give the same results"""
+        try:
+            for euler in self.euler_test_cases:
+                # Convert input to JAX array
+                print(f"\nTesting euler2mat with input: euler={euler}")
+                euler_jax = jp.array(euler, dtype=jp.float32)
+                
+                # Compute results from both implementations
+                result_np = np_euler2mat(euler)
+                result_jax = jax_euler2mat(euler_jax)
+                
+                print(f"NumPy result:\n{result_np}")
+                print(f"JAX result:\n{result_jax}")
+                
+                # Convert JAX result to numpy for comparison
+                result_jax = np.array(result_jax)
+                
+                # Compare results
+                np.testing.assert_allclose(
+                    result_np, 
+                    result_jax, 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Results don't match for euler={euler}"
+                )
+                
+                # Test orthogonality property
+                mat_t = result_jax.T
+                identity = np.eye(3, dtype=np.float32)
+                np.testing.assert_allclose(
+                    result_jax @ mat_t,
+                    identity,
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg=f"Matrix not orthogonal for euler={euler}"
+                )
+                
+        except Exception as e:
+            print(f"Error in euler2mat test: {str(e)}")
+            raise
+
+    def test_axis_angle2quat_properties(self):
+        """Test mathematical properties of axis-angle to quaternion conversion"""
+        try:
+            for axis, angle in self.axis_angle_test_cases:
+                axis_jax = jp.array(axis, dtype=jp.float32)
+                
+                # Property 1: Result should be a unit quaternion
+                result = jax_axis_angle2quat(axis_jax, angle)
+                norm = jp.sqrt(jp.sum(result * result))
+                np.testing.assert_allclose(
+                    float(norm),
+                    1.0,
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg=f"Result not unit quaternion for axis={axis}, angle={angle}"
+                )
+                
+                # Property 2: Zero angle should give identity quaternion
+                result_zero = jax_axis_angle2quat(axis_jax, 0.0)
+                identity = jp.array([1., 0., 0., 0.], dtype=jp.float32)
+                np.testing.assert_allclose(
+                    np.array(result_zero),
+                    identity,
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg=f"Zero angle doesn't give identity for axis={axis}"
+                )
+                
+        except Exception as e:
+            print(f"Error in axis_angle2quat properties test: {str(e)}")
+            raise
+
+    def test_euler2mat_properties(self):
+        """Test mathematical properties of Euler angles to rotation matrix conversion"""
+        try:
+            for euler in self.euler_test_cases:
+                euler_jax = jp.array(euler, dtype=jp.float32)
+                
+                # Property 1: Determinant should be 1 (proper rotation)
+                result = jax_euler2mat(euler_jax)
+                det = jp.linalg.det(result)
+                np.testing.assert_allclose(
+                    float(det),
+                    1.0,
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg=f"Determinant not 1 for euler={euler}"
+                )
+                
+                # Property 2: Zero angles should give identity matrix
+                zero_euler = jp.zeros(3, dtype=jp.float32)
+                result_zero = jax_euler2mat(zero_euler)
+                identity = jp.eye(3, dtype=jp.float32)
+                np.testing.assert_allclose(
+                    np.array(result_zero),
+                    identity,
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg="Zero angles don't give identity matrix"
+                )
+                
+        except Exception as e:
+            print(f"Error in euler2mat properties test: {str(e)}")
             raise
 
 
