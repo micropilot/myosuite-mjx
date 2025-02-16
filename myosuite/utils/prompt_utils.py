@@ -34,7 +34,7 @@ PROMPT_CACHE = []
 
 # Infer verbose mode to be used
 VERBOSE_MODE = os.getenv("ROBOHIVE_VERBOSITY")
-if VERBOSE_MODE == None:
+if VERBOSE_MODE is None:
     VERBOSE_MODE = Prompt.WARN
 else:
     VERBOSE_MODE = VERBOSE_MODE.upper()
@@ -76,7 +76,7 @@ def prompt(
             type = Prompt.ALWAYS
 
     # resolve print colors
-    if on_color == None:
+    if on_color is None:
         if type == Prompt.WARN:
             color = "black"
             on_color = "on_yellow"

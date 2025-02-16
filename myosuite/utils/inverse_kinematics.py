@@ -37,7 +37,7 @@ _REQUIRE_TARGET_POS_OR_QUAT = (
 IKResult = collections.namedtuple("IKResult", ["qpos", "err_norm", "steps", "success"])
 
 
-def qpos_from_site_pose(
+def qpos_from_site_pose(  # noqa: C901
     physics,
     site_name,
     target_pos=None,

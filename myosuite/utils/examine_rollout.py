@@ -103,7 +103,7 @@ import skvideo.io
     default=0.0,
     help=('Noise amplitude in randians}"'),
 )
-def main(
+def main(  # noqa: C901
     env_name,
     rollout_path,
     mode,
@@ -125,7 +125,7 @@ def main(
     np.random.seed(seed)
     env = (
         gym.make(env_name)
-        if env_args == None
+        if env_args is None
         else gym.make(env_name, **(eval(env_args)))
     )
     env.seed(seed)
@@ -170,7 +170,7 @@ def main(
         frames = np.zeros(
             (env.horizon, frame_size[1], frame_size[0], 3), dtype=np.uint8
         )
-    elif render == None:
+    elif render is None:
         env.mujoco_render_frames = False
 
     # playback paths

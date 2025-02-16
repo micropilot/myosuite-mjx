@@ -2,7 +2,7 @@ import numpy as np
 import unittest
 
 
-def dict_numpify(data: dict, u_res=np.uint8, i_res=np.int8, f_res=np.float16) -> dict:
+def dict_numpify(data: dict, u_res=np.uint8, i_res=np.int8, f_res=np.float16) -> dict:  # noqa: C901
     """
     Convert all data to numpy using specified resolution
     data:   Input dict
@@ -40,13 +40,13 @@ def dict_numpify(data: dict, u_res=np.uint8, i_res=np.int8, f_res=np.float16) ->
 
         # lists/ tuples
         elif "__len__" in dir(val) and len(val) > 0:
-            if type(val[0]) == bool:
+            if isinstance(val[0], bool):
                 val = np.array(val, dtype=np.bool_)
-            elif type(val[0]) == int:
+            elif isinstance(val[0], int):
                 val = np.array(val, dtype=i_res)
-            elif type(val[0]) == float:
+            elif isinstance(val[0], float):
                 val = np.array(val, dtype=f_res)
-            elif type(val[0]) != str:
+            elif not isinstance(val[0], str):
                 val = np.array(val)  # let numpy handle it for nested stuctures
                 # raise TypeError("Data type {} not supported for {}".format(type(val[0]), key))
 

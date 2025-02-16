@@ -93,7 +93,7 @@ def plot_horizon(paths, env, fileName_prefix=None):
 
 
 # 2D-plot of paths detailing obs, act, rwds across time
-def plot(paths, env=None, fileName_prefix=""):
+def plot(paths, env=None, fileName_prefix=""):  # noqa: C901
     """
     2D-plot of paths detailing obs, act, rwds across time
 
@@ -138,8 +138,7 @@ def plot(paths, env=None, fileName_prefix=""):
         nplt2 = 3
         ax = plt.subplot(nplt2, 2, 2)
         ax.set_prop_cycle(None)
-        # h4 = plt.plot(path['env_infos']['time'], env.act_mid + path['actions']*env.act_rng, '-', label='act') # plot scaled actions
-        h4 = plt.plot(
+        plt.plot(
             path["env_infos"]["time"], path["actions"], "-", label="act"
         )  # plot normalized actions
         plt.ylabel("actions")
@@ -200,7 +199,7 @@ def plot(paths, env=None, fileName_prefix=""):
 
 
 # Render frames/videos
-def render(rollout_path, render_format: str = "mp4", cam_names: list = ["left"]):
+def render(rollout_path, render_format: str = "mp4", cam_names: list = ["left"]):  # noqa: C901
     """
     Render the frames from a given rollout.
 
@@ -259,7 +258,7 @@ def render(rollout_path, render_format: str = "mp4", cam_names: list = ["left"])
                     cam_key = key
                     break
             assert (
-                cam_key != None
+                cam_key is not None
             ), "Cam: {} not found in data. Available keys: [{}]".format(
                 cam_name, data_keys
             )
@@ -298,7 +297,7 @@ def render(rollout_path, render_format: str = "mp4", cam_names: list = ["left"])
 
 
 # parse path from robohive format into robopen dataset format
-def path2dataset(path: dict, config_path=None) -> dict:
+def path2dataset(path: dict, config_path=None) -> dict:  # noqa: C901
     """
     Convert Robohive format into roboset format
     """
@@ -331,7 +330,6 @@ def path2dataset(path: dict, config_path=None) -> dict:
         dataset["data/user"] = path["env_infos"]["obs_dict"]["user"]
 
     # Derived =====
-    pose_ee = []
     if "pos_ee" in obs_keys or "rot_ee" in obs_keys:
         assert (
             "pos_ee" in obs_keys and "rot_ee" in obs_keys
@@ -369,7 +367,7 @@ def print_h5_schema(obj):
 
 
 # convert paths from pickle to h5 format
-def pickle2h5(
+def pickle2h5(  # noqa: C901
     rollout_path,
     output_dir=None,
     verify_output=False,
@@ -386,7 +384,7 @@ def pickle2h5(
     # config_path:      add extra configs
 
     # resolve output dirzz
-    if output_dir == None:  # overide the default
+    if output_dir is None:  # overide the default
         output_dir = os.path.dirname(rollout_path)
 
     # resolve rollout_paths
@@ -466,7 +464,7 @@ def pickle2h5(
         if verify_output:
             with h5py.File(output_path, "r") as h5file:
                 print("Printing schema read from output: ", output_path)
-                keys = print_h5_schema(h5file)
+                print_h5_schema(h5file)
 
     print("Finished Processing")
 
@@ -578,7 +576,7 @@ def util_path_cli(
     elif util == "h5schema":
         with h5py.File(path, "r") as h5file:
             print("Printing schema read from output: ", path)
-            keys = print_h5_schema(h5file)
+            print_h5_schema(h5file)
     else:
         raise TypeError("Unknown utility requested")
 

@@ -153,7 +153,7 @@ class implement_for:
 
         return _lazy_call_fn
 
-    def _call(self):
+    def _call(self):  # noqa: C901
 
         # If the module is missing replace the function with the mock.
         fn = self.fn

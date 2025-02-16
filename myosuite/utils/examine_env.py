@@ -138,7 +138,7 @@ def main(
     np.random.seed(seed)
     envw = (
         gym.make(env_name)
-        if env_args == None
+        if env_args is None
         else gym.make(env_name, **(eval(env_args)))
     )
     env = envw.unwrapped
@@ -165,7 +165,7 @@ def main(
         output_name = "random_policy" if output_name is None else output_name
 
     # resolve directory
-    if (os.path.isdir(output_dir) == False) and (
+    if (os.path.isdir(output_dir) is False) and (
         render == "offscreen" or save_paths or plot_paths is not None
     ):
         os.mkdir(output_dir)
