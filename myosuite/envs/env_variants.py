@@ -8,7 +8,6 @@ License :: Under Apache License, Version 2.0 (the "License"); you may not use th
 from myosuite.utils import gym
 
 register = gym.register
-import collections
 from copy import deepcopy
 from flatten_dict import flatten, unflatten
 
@@ -164,7 +163,6 @@ def register_env_variant(
 
 # Example usage
 if __name__ == "__main__":
-    import robohive
     import pprint
 
     # Register a variant

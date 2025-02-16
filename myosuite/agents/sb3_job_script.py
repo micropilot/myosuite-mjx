@@ -8,8 +8,6 @@ This is a job script for running SB3 on myosuite tasks.
 """
 
 import os
-import json
-import time as timer
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_util import make_vec_env
@@ -18,8 +16,7 @@ from stable_baselines3.common.vec_env import VecNormalize
 import torch
 from omegaconf import OmegaConf
 
-import functools
-from in_callbacks import InfoCallback, FallbackCheckpoint, SaveSuccesses, EvalCallback
+from in_callbacks import InfoCallback, FallbackCheckpoint, EvalCallback
 
 IS_WnB_enabled = False
 try:

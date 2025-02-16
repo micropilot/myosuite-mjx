@@ -1,6 +1,5 @@
 import jax.numpy as jp
 import jax
-from jax import lax
 
 # Constants for floating-point precision
 _FLOAT_EPS = jp.finfo(jp.float32).eps

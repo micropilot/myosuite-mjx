@@ -1,12 +1,8 @@
 from myosuite.utils import gym
 
-from stable_baselines3 import SAC, PPO
+from stable_baselines3 import SAC
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
-from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.logger import configure
 from stable_baselines3.common.callbacks import BaseCallback
-from sklearn.decomposition import PCA, FastICA
-from sklearn.preprocessing import MinMaxScaler
 from collections import deque as dq
 
 import os
@@ -93,7 +89,6 @@ class SaveSuccesses(BaseCallback):
         )
         #         plt.plot(range(len(self.success_results)), self.success_results)
         #         plt.show()
-        pass
 
 
 def linear_schedule(initial_value: float) -> Callable[[float], float]:

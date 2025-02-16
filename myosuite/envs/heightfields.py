@@ -3,18 +3,12 @@
 Authors  :: Pierre Schumacher (schumacherpier@gmail.com), Vikash Kumar (vikashplus@gmail.com), Vittorio Caggiano (caggiano@gmail.com)
 ================================================="""
 
-import collections
 import math
-from myosuite.utils import gym
 import numpy as np
 import os
 from enum import Enum
-from typing import Optional, Tuple
 
-from myosuite.envs.myo.base_v0 import BaseV0
-from myosuite.envs.myo.myobase.walk_v0 import WalkEnvV0
-from myosuite.utils.quat_math import quat2euler, euler2mat, euler2quat
-from abc import abstractmethod
+from myosuite.utils.quat_math import quat2euler, euler2mat
 
 
 class TerrainTypes(Enum):

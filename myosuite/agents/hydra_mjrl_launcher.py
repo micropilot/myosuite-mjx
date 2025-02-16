@@ -7,10 +7,8 @@ Authors  :: Vikash Kumar (vikashplus@gmail.com), Vittorio Caggiano (caggiano@gma
 This is a launcher script for launching mjrl training using hydra
 """
 
-import os
-import time as timer
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import OmegaConf
 from mjrl_job_script import train_loop
 
 

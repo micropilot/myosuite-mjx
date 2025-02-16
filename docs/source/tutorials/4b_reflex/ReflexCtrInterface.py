@@ -10,11 +10,9 @@ from __future__ import division  # '/' always means non-truncating division
 import numpy as np
 from reflexCtr import LocoCtrl
 
-import myosuite
 from myosuite.utils import gym
 
 import numpy as np
-import os
 
 from myosuite.utils.quat_math import quat2euler
 from myosuite.utils.quat_math import euler2quat

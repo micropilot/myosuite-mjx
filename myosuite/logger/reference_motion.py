@@ -2,8 +2,6 @@ import enum
 from typing import Union
 import collections
 import numpy as np
-from myosuite.utils.quat_math import euler2quat
-import glob
 import pickle
 
 # Time precision to use. Avoids rounding/resolution errors during comparisons

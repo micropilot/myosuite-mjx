@@ -17,7 +17,6 @@ import torch.optim
 from tensordict.nn import AddStateIndependentNormalScale, TensorDictModule
 from torchrl.data import CompositeSpec
 from torchrl.envs import (
-    ClipTransform,
     DoubleToFloat,
     ExplorationType,
     RewardSum,

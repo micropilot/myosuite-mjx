@@ -6,13 +6,12 @@ Authors  :: Vikash Kumar (vikashplus@gmail.com), Vittorio Caggiano (caggiano@gma
 
 import collections
 import enum
-import os, time
 
 from scipy.spatial.transform import Rotation as R
 import mujoco
 from myosuite.utils import gym
 import numpy as np
-from myosuite.utils.quat_math import mat2euler, euler2quat
+from myosuite.utils.quat_math import mat2euler
 from typing import List
 
 from myosuite.envs.myo.base_v0 import BaseV0

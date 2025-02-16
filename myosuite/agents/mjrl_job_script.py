@@ -12,17 +12,12 @@ Separate job scripts are provided to run few other algorithms
 
 from mjrl.utils.gym_env import GymEnv
 from mjrl.policies.gaussian_mlp import MLP
-from mjrl.baselines.quadratic_baseline import QuadraticBaseline
 from mjrl.baselines.mlp_baseline import MLPBaseline
 from mjrl.algos.npg_cg import NPG
 from mjrl.algos.batch_reinforce import BatchREINFORCE
 from mjrl.algos.ppo_clip import PPO
 from mjrl.utils.train_agent import train_agent
-import os
-import json
-import gym
 import time as timer
-import myosuite
 
 
 def train_loop(job_data) -> None:

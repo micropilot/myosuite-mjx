@@ -12,7 +12,6 @@ import mujoco
 import time
 import numpy as np
 from collections import deque
-import os
 
 np.set_printoptions(precision=4)
 

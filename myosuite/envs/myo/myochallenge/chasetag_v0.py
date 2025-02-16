@@ -7,13 +7,12 @@ import collections
 from myosuite.utils import gym
 import numpy as np
 import pink
-import os
 from enum import Enum
-from typing import Optional, Tuple
+from typing import Tuple
 
 from myosuite.envs.myo.base_v0 import BaseV0
 from myosuite.envs.myo.myobase.walk_v0 import WalkEnvV0
-from myosuite.utils.quat_math import quat2euler, euler2mat, euler2quat
+from myosuite.utils.quat_math import quat2euler, euler2quat
 from myosuite.envs.heightfields import ChaseTagField
 
 

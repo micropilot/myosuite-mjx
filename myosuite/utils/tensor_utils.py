@@ -1,5 +1,4 @@
 # Source: https://github.dev/aravindr93/mjrl/tree/master/mjrl
-import operator
 
 import numpy as np
 

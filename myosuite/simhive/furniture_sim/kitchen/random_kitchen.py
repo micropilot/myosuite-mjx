@@ -6,17 +6,14 @@ USAGE:
 import os
 import click
 import numpy as np
-import time
 import re
 
 try:
-    import mujoco_py
     from mujoco_py import (
         load_model_from_path,
         MjSim,
         MjViewer,
         load_model_from_xml,
-        functions,
     )
 except ImportError as e:
     raise ImportError(

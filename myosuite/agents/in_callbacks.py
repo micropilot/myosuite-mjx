@@ -12,7 +12,6 @@ import os
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.evaluation import evaluate_policy
 from collections import deque as dq
-from stable_baselines3.common.monitor import Monitor
 import numpy as np
 import time
 

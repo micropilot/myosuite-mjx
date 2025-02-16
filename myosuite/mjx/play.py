@@ -1,6 +1,4 @@
 import jax
-import jax.numpy as jp
-from jax.random import PRNGKey
 import mujoco
 from mujoco import mjx
 import mediapy

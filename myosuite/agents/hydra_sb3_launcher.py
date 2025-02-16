@@ -7,12 +7,9 @@ Authors  :: Cameron Berg (cameronberg@fb.com), Vikash Kumar (vikashplus@gmail.co
 This is a launcher script for launching SAC training using hydra.
 """
 
-import os
-import time as timer
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import OmegaConf
 from sb3_job_script import train_loop
-from myosuite.utils import gym
 
 
 # ===============================================================================

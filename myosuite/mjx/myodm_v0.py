@@ -1,6 +1,5 @@
 import os
 import time
-import jax
 from jax import numpy as jp
 
 import mujoco
@@ -10,7 +9,6 @@ from brax.envs.base import PipelineEnv, State
 
 from myosuite.mjx.reference_motion import ReferenceMotion
 from myosuite.mjx.quat_math import euler2quat, quat2euler, quatDiff2Vel, mat2quat
-from myosuite.mjx.utils import perturbed_pipeline_step
 
 
 class TrackEnv(PipelineEnv):

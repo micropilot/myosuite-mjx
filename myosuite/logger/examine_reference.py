@@ -1,4 +1,3 @@
-import myosuite
 from myosuite.utils import gym
 import time
 import click

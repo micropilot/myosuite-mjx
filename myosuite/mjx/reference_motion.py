@@ -4,7 +4,6 @@ import collections
 from jax import numpy as jp
 import jax
 import jax.random as jrandom
-from myosuite.mjx.quat_math import euler2quat
 import pickle
 
 # Time precision to use. Avoids rounding/resolution errors during comparisons
