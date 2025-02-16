@@ -74,7 +74,7 @@ class MjPyRenderer(Renderer):
             device_id=device_id,
         )
         # flip image upside down
-        if type(render_out) == tuple:
+        if isinstance(render_out, tuple):
             rgb = render_out[0][::-1, :, :]
             return (rgb, render_out[1])
         else:

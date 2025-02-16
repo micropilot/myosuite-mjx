@@ -100,7 +100,7 @@ class MJRenderer(Renderer):
         Returns:
             A numpy array of the pixels.
         """
-        if camera_id == None:
+        if camera_id is None:
             camera_id = -1
         if self._renderer is None:
             self.setup_renderer(self._sim.model.ptr, width=width, height=height)
