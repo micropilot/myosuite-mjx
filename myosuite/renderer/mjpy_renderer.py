@@ -45,7 +45,7 @@ class MjPyRenderer(Renderer):
         self,
         width: int,
         height: int,
-        #  mode: RenderMode = RenderMode.RGB,
+        mode: RenderMode = RenderMode.RGB,
         depth: bool = False,
         segmentation: bool = False,
         camera_id: int = -1,

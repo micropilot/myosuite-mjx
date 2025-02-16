@@ -523,7 +523,7 @@ class Robot:
                 device = self.robot_config[cam_name]
                 assert (
                     device["interface"]["type"] == "realsense"
-                ), "Check interface type for {}".format(cam)
+                ), "Check interface type for {}".format(cam_name)
                 data = device["robot"].get_sensors()
                 data_height = data["rgb"].shape[0]
                 assert (
@@ -906,7 +906,7 @@ class Robot:
         if _ROBOT_VIZ:
             global timing_SRV_t0
             timing_SRV_t = time.time()
-            timing_SRV.append(y_data=timing_SRV_t - timing_SRV_t0)
+            # timing_SRV.append(y_data=timing_SRV_t - timing_SRV_t0)
             timing_SRV_t0 = timing_SRV_t
         return ctrl_feasible
 
