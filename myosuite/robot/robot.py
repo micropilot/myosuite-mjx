@@ -64,7 +64,7 @@ class Robot:
         self.is_hardware = bool(is_hardware)
         self._sensor_cache_maxsize = sensor_cache_maxsize
         self._noise_scale = noise_scale
-        if random_generator == None:
+        if random_generator is None:
             self.np_random = np.random
         else:
             self.np_random = random_generator
@@ -124,7 +124,7 @@ class Robot:
                 prompt("ERROR: Please check device {}".format(name), "white", "on_red")
 
     # initialize all hardware components
-    def hardware_init(self, robot_config):
+    def hardware_init(self, robot_config):  # noqa: C901
 
         # initalize
         for name, device in robot_config.items():
@@ -165,7 +165,7 @@ class Robot:
                     from .hardware_realsense import RealSense
 
                     device["robot"] = RealSense(name=name, **device["interface"])
-                except:
+                except:  # noqa: E722
                     from .hardware_realsense_single import RealsenseAPI
 
                     device["robot"] = RealsenseAPI(**device["interface"])
@@ -181,7 +181,7 @@ class Robot:
                         device["interface"]["type"]
                     )
                 )
-                raise NotImplemented
+                raise NotImplementedError
 
         # start all hardware
         for name, device in robot_config.items():
@@ -216,7 +216,7 @@ class Robot:
                         device["interface"]["type"]
                     )
                 )
-                raise NotImplemented
+                raise NotImplementedError
 
         return robot_config
 
@@ -267,7 +267,7 @@ class Robot:
                             device["interface"]["type"]
                         )
                     )
-                    raise NotImplemented
+                    raise NotImplementedError
 
                 # calibrate sensors
                 for id, sensor in enumerate(device["sensor"]):
@@ -280,7 +280,7 @@ class Robot:
         return current_sensor_value
 
     # apply controls to hardware
-    def hardware_apply_controls(self, control, is_reset=False):
+    def hardware_apply_controls(self, control, is_reset=False):  # noqa: C901
         for name, device in self.robot_config.items():
             if "actuator" in device.keys() and len(device["actuator"]) > 0:
                 if device["interface"]["type"] == "dynamixel":
@@ -303,7 +303,7 @@ class Robot:
                             pwm_ctrl.append(calib_ctrl)
                         else:
                             print("ERROR: Mode not found")
-                            raise NotImplemented
+                            raise NotImplementedError
                     # send controls
                     if pos_ids:
                         device["robot"].set_des_pos(pos_ids, pos_ctrl)
@@ -336,7 +336,7 @@ class Robot:
                     else:
                         device["robot"].apply_commands(robotiq_des_pos[0])
                 else:
-                    raise NotImplemented("ERROR: interface not found")
+                    raise NotImplementedError("ERROR: interface not found")
 
     # close hardware
     def hardware_close(self):
@@ -364,12 +364,12 @@ class Robot:
                         device["robot"] = None
             else:
                 print("ERROR: interface not found")
-                raise NotImplemented
+                raise NotImplementedError
 
         return status
 
     # configure robot
-    def configure_robot(self, sim, config_path):
+    def configure_robot(self, sim, config_path):  # noqa: C901
         """
         Read the model xml and robot configs from provided files. Compile config with the model
         """
@@ -624,7 +624,7 @@ class Robot:
         destination_sim.forward()
 
     # remap sensor/actuators spaces: sim<>hardware, TODO: Needs rigerous testing
-    def remap_space(
+    def remap_space(  # noqa: C901
         self, input_vec, input_type: str, input_space: str, output_space: str
     ):
         assert input_type in ["sensor", "actuator"], "check input type"
@@ -751,7 +751,7 @@ class Robot:
         return controls_out
 
     # enfoce limits
-    def process_actuator(
+    def process_actuator(  # noqa: C901
         self,
         controls,
         step_duration,
@@ -879,7 +879,7 @@ class Robot:
         else:
             n_frames = int(step_duration / self.sim.step_duration)
             self.sim.data.ctrl[:] = ctrl_feasible
-            self.sim.advance(substeps=n_frames, render=(render_cbk != None))
+            self.sim.advance(substeps=n_frames, render=(render_cbk is not None))
 
         # update viz
         if _ROBOT_VIZ:
@@ -910,7 +910,7 @@ class Robot:
         return ctrl_feasible
 
     # Reset the robot
-    def reset(self, reset_pos, reset_vel, blocking=True, **kwargs):
+    def reset(self, reset_pos, reset_vel, blocking=True, **kwargs):  # noqa: C901
 
         prompt("Resetting {}".format(self.name), "white", "on_grey", flush=True)
 
@@ -1026,7 +1026,7 @@ class Robot:
                 )
         else:
             prompt(
-                f"Trying to close a non-existent robot", flush=True, type=Prompt.WARN
+                "Trying to close a non-existent robot", flush=True, type=Prompt.WARN
             )
 
 
