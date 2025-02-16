@@ -53,7 +53,7 @@ class DMSimScene(SimScene):
         # Step the simulation substeps (frame_skip) times.
         try:
             self.sim.step(substeps)
-        except:
+        except:  # noqa: E722
             prompt(
                 "Simulation couldn't be stepped as intended. Issuing a reset",
                 type=Prompt.WARN,
@@ -107,7 +107,7 @@ class DMSimScene(SimScene):
         """Returns a handle that can be passed to mjlib methods."""
         return value.ptr
 
-    def _patch_mjmodel_accessors(self, model):
+    def _patch_mjmodel_accessors(self, model):  # noqa: C901
         """Adds accessors to MjModel objects to support mujoco_py API.
 
         This adds `*_name2id` methods to a Physics object to have API

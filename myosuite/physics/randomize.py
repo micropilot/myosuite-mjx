@@ -90,7 +90,7 @@ class SimRandomizer:
                 *position_perturb_range, size=(3,) if all_same else (num_bodies, 3)
             )
 
-    def randomize_geoms(
+    def randomize_geoms(  # noqa: C901
         self,
         names: Optional[Iterable[str]] = None,
         parent_body_names: Optional[Iterable[str]] = None,

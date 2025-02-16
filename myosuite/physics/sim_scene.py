@@ -27,7 +27,7 @@ class SimBackend(enum.Enum):
         sim_backend = os.getenv("sim_backend")
         if sim_backend == "MUJOCO_PY":
             return SimBackend.MUJOCO_PY
-        elif sim_backend == "MUJOCO" or sim_backend == None:
+        elif sim_backend == "MUJOCO" or sim_backend is None:
             return SimBackend.MUJOCO
         else:
             raise ValueError(
