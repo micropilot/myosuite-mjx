@@ -15,12 +15,12 @@ def gym_registry_specs():
 
 
 @implement_for("gym", "0.24", None)
-def gym_registry_specs():
+def gym_registry_specs():  # noqa: F811
     return gym.envs.registry
 
 
 @implement_for("gymnasium")
-def gym_registry_specs():
+def gym_registry_specs():  # noqa: F811
     return gym.envs.registry
 
 

@@ -131,7 +131,7 @@ class TestEnvs(unittest.TestCase):
         ), "Reset should return the observation vector"
 
     @implement_for("gym", "0.26", None)
-    def check_reset(self, reset_data):
+    def check_reset(self, reset_data):  # noqa: F811
         assert (
             isinstance(reset_data, tuple) and len(reset_data) == 2
         ), "Reset should return a tuple of length 2"
@@ -140,7 +140,7 @@ class TestEnvs(unittest.TestCase):
         ), "second element returned should be a dict"
 
     @implement_for("gymnasium")
-    def check_reset(self, reset_data):
+    def check_reset(self, reset_data):  # noqa: F811
         assert (
             isinstance(reset_data, tuple) and len(reset_data) == 2
         ), "Reset should return a tuple of length 2"
@@ -159,23 +159,22 @@ class TestEnvs(unittest.TestCase):
             # test reset
             env.env.reset()
             # test obs vec
-            obs = env.env.get_obs()
 
             if not lite:
                 # test obs dict
                 obs_dict = env.env.get_obs_dict(env.env.sim)
                 # test rewards
-                rwd = env.env.get_reward_dict(obs_dict)
+                env.env.get_reward_dict(obs_dict)
 
                 # test vector => dict upgrade
                 # print(env.env.get_obs() - env.env.get_obs_vec())
                 # assert (env.env.get_obs() == env.env.get_obs_vec()).all(), "check vectorized computations"
 
             # test env infos
-            infos = env.env.get_env_infos()
+            env.env.get_env_infos()
 
             # test step (everything together)
-            observation, _reward, done, _info = env.env.step(
+            env.env.step(
                 np.zeros(env.env.sim.model.nu)
             )
             del env
