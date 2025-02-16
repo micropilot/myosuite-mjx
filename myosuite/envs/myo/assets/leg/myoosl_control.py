@@ -185,7 +185,7 @@ class MyoOSLController:
         # Hidden function, not to be used directly
         "Internal function to calculate commanded torques for each joint"
         if joint not in ["knee", "ankle"]:
-            print(f"Non-existant joint. Can only be either 'knee' or 'ankle'")
+            print("Non-existant joint. Can only be either 'knee' or 'ankle'")
             raise Exception
 
         state_params = self.STATE_MACHINE.get_current_state.get_variables()
