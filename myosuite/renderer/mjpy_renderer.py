@@ -9,6 +9,7 @@ License :: Under Apache License, Version 2.0 (the "License"); you may not use th
 
 import mujoco_py
 import numpy as np
+from enum import Enum
 
 from myosuite.renderer.renderer import Renderer, RenderMode
 
@@ -115,3 +116,8 @@ class MjPyRenderer(Renderer):
                 viewer.flags[7] = value
             if key == "render_actuator":
                 viewer.flags[3] = value  # mujoco
+
+
+class RenderMode(Enum):
+    RGB = "rgb"
+    DEPTH = "depth"

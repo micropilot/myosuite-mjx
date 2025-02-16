@@ -349,7 +349,7 @@ class LocoCtrl(object):
         for s_leg in ["r_leg", "l_leg"]:
             if self.control_dimension == 3:
                 self.brain_command[s_leg]["theta_tgt_f"] = cp[s_leg]["theta_tgt_f"]
-                sign_frontral = 1 if s_leg is "r_leg" else -1  # Right was 1 intially
+                sign_frontral = 1 if s_leg == "r_leg" else -1  # Right was 1 intially
                 alpha_tgt_global_frontal = (
                     cp[s_leg]["c0_f"]
                     + sign_frontral * cp[s_leg]["cv_f"] * s_b["d_pos"][1]
@@ -488,7 +488,7 @@ class LocoCtrl(object):
         theta = s_b["theta"][1]
         dtheta = s_b["dtheta"][1]
 
-        sign_frontral = 1 if s_leg is "r_leg" else -1
+        sign_frontral = 1 if s_leg == "r_leg" else -1  # Right was 1 intially
         theta_f = sign_frontral * s_b["theta"][0]
         dtheta_f = sign_frontral * s_b["dtheta"][0]
 

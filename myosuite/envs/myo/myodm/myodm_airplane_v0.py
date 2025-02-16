@@ -6,6 +6,9 @@ from brax.envs.base import Env, MjxEnv, State
 
 from myosuite.logger.reference_motion_jax import ReferenceMotion
 from myosuite.utils.quat_math_jax import euler2quat, mat2quat, quat2euler, quatDiff2Vel
+from myosuite.utils.fatigue import CumulativeFatigueJAX
+from myosuite.utils.pipeline import perturbed_pipeline_step
+from myosuite.utils.tolerance import tolerance
 
 
 class MyoHandAirplaneV0(MjxEnv):

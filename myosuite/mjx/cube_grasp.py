@@ -1,5 +1,6 @@
 import jax
 from jax import numpy as jp
+import jax.numpy as jnp
 
 import mujoco
 from mujoco import mjx
@@ -38,7 +39,7 @@ class MyoHandCubeLiftEnv(PipelineEnv):
 
         reference_data = "myosuite/envs/myo/myodm/data/MyoHand_cubesmall_lift.npz"
         self.ref = ReferenceMotion(reference_data, motion_extrapolation=0)
-        self.motion_start_time = motion_start_time
+        self.motion_start_time = 0  # Define default value
         self.target_sid = mujoco.mj_name2id(
             mj_model, mujoco.mjtObj.mjOBJ_SITE, "target"
         )
