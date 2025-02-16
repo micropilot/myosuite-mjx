@@ -102,12 +102,12 @@ class TrackEnv(PipelineEnv):
 
         ##########################################
         self.lift_bonus_thresh = 0.02
-        ### PRE-GRASP
+        # PRE-GRASP
         self.obj_err_scale = 50
         self.base_err_scale = 40
         self.lift_bonus_mag = 1  # 2.5
 
-        ### DEEPMIMIC
+        # DEEPMIMIC
         self.qpos_reward_weight = 0.35
         self.qpos_err_scale = 5.0
 
@@ -137,7 +137,7 @@ class TrackEnv(PipelineEnv):
         pos = self.sys.mj_model.body_pos[self.object_bid]
         self.lift_z = (ipos + pos)[2] + self.lift_bonus_thresh
 
-        if motion_extrapolation == False:
+        if not motion_extrapolation:
             self.spec.max_episode_steps = self.ref.horizon
 
         robot_init, object_init = self.ref.get_init()

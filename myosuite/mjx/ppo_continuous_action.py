@@ -3,11 +3,8 @@ import os
 os.environ["JAX_CHECK_TRACER_LEAKS"] = "true"
 import functools
 
-
 from datetime import datetime
 from jax import numpy as jp
-
-
 
 from brax.training.agents.ppo import train as ppo
 
