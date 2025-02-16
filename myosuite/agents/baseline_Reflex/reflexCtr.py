@@ -399,7 +399,7 @@ class LocoCtrl(object):
             self.stim[s_leg] = self.spinal_control_leg(s_leg, sensor_data)
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _update_spinal_control_phase(self, s_leg, sensor_data):
+    def _update_spinal_control_phase(self, s_leg, sensor_data):  # noqa: C901
         s_l = sensor_data[s_leg]
 
         alpha_tgt = self.brain_command[s_leg]["alpha_tgt"]

@@ -9,7 +9,7 @@ results from Schulman et al. 2017 for the on MuJoCo Environments.
 by Vincent Moens (vmoens@meta.com) and Albert Bou (@albertbou92)
 """
 import hydra
-
+from omegaconf import DictConfig
 
 import torch.nn
 import torch.optim
@@ -151,7 +151,7 @@ def eval_model(actor, test_env, num_episodes=3):
 
 
 @hydra.main(config_path=".", config_name="config_mujoco")
-def main(cfg: "DictConfig"):  # noqa: F821
+def main(cfg: "DictConfig"):  # noqa: C901
 
     import time
 

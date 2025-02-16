@@ -571,7 +571,7 @@ class MyoLegReflex(object):
         # Offset index of 7, 1st 7 elements are the 3D pos and quad of the free root joint
 
         # offset will change if indexing function changes
-        # env.sim.model.joint_name2id - Takes into consideration that there is a root joint. 
+        # env.sim.model.joint_name2id - Takes into consideration that there is a root joint.
         # (Uses an offset of +6 instead)
         # env.sim.model.joint_names.index - Uses only the joint_name property to perform indexing
 

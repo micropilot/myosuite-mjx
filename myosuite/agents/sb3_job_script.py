@@ -24,7 +24,7 @@ try:
     from wandb.integration.sb3 import WandbCallback
 
     IS_WnB_enabled = True
-except ImportError as e:
+except ImportError as e:  # noqa: F841
     pass
 
 
@@ -113,7 +113,7 @@ def train_loop(job_data) -> None:
     callback += [FallbackCheckpoint(job_data.restore_checkpoint_freq)]
     callback += [
         CheckpointCallback(
-            save_freq=job_data.save_freq, save_path=f"logs/", name_prefix="rl_models"
+            save_freq=job_data.save_freq, save_path="logs/", name_prefix="rl_models"
         )
     ]
 
