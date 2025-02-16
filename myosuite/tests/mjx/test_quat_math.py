@@ -6,8 +6,8 @@ import jax.numpy as jp
 # Configure JAX to use CPU to avoid potential GPU-related issues
 jax.config.update('jax_platform_name', 'cpu')
 
-from myosuite.utils.quat_math import mulQuat as np_mulQuat, negQuat as np_negQuat, quat2Vel as np_quat2Vel
-from myosuite.mjx.quat_math import mulQuat as jax_mulQuat, negQuat as jax_negQuat, quat2Vel as jax_quat2Vel
+from myosuite.utils.quat_math import mulQuat as np_mulQuat, negQuat as np_negQuat, quat2Vel as np_quat2Vel, diffQuat as np_diffQuat
+from myosuite.mjx.quat_math import mulQuat as jax_mulQuat, negQuat as jax_negQuat, quat2Vel as jax_quat2Vel, diffQuat as jax_diffQuat
 
 
 class TestQuatMath(unittest.TestCase):
@@ -84,6 +84,38 @@ class TestQuatMath(unittest.TestCase):
             
             # For arbitrary rotation: specific values
             (2*np.arccos(0.5), np.array([1., 1., 1.]/np.sqrt(3), dtype=np.float32)),
+        ]
+
+        # Add test cases for diffQuat
+        self.diff_test_cases = [
+            # Same quaternions (should result in identity)
+            (np.array([1., 0., 0., 0.], dtype=np.float32),  # Identity
+             np.array([1., 0., 0., 0.], dtype=np.float32)),
+            
+            # 90-degree difference around x-axis
+            (np.array([1., 0., 0., 0.], dtype=np.float32),  # Identity
+             np.array([0.7071067811865476, 0.7071067811865476, 0., 0.], dtype=np.float32)),
+            
+            # 90-degree difference around y-axis
+            (np.array([1., 0., 0., 0.], dtype=np.float32),  # Identity
+             np.array([0.7071067811865476, 0., 0.7071067811865476, 0.], dtype=np.float32)),
+            
+            # 180-degree difference around z-axis
+            (np.array([1., 0., 0., 0.], dtype=np.float32),  # Identity
+             np.array([0., 0., 0., 1.], dtype=np.float32)),
+            
+            # Arbitrary rotations
+            (np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float32),
+             np.array([0.5, -0.5, 0.5, -0.5], dtype=np.float32)),
+        ]
+
+        # Expected results for diffQuat
+        self.diff_expected_results = [
+            np.array([1., 0., 0., 0.], dtype=np.float32),  # Identity (no difference)
+            np.array([0.7071067811865476, 0.7071067811865476, 0., 0.], dtype=np.float32),  # 90-deg x
+            np.array([0.7071067811865476, 0., 0.7071067811865476, 0.], dtype=np.float32),  # 90-deg y
+            np.array([0., 0., 0., 1.], dtype=np.float32),  # 180-deg z
+            np.array([0., -1., 0., 0.], dtype=np.float32),  # Result for arbitrary case
         ]
 
     def test_mulQuat_implementations_match(self):
@@ -277,6 +309,92 @@ class TestQuatMath(unittest.TestCase):
                     
         except Exception as e:
             print(f"Error in quat2Vel test: {str(e)}")
+            raise
+
+    def test_diffQuat_implementations_match(self):
+        """Test that JAX and NumPy implementations of diffQuat give the same results"""
+        try:
+            for (q1, q2), expected_result in zip(self.diff_test_cases, self.diff_expected_results):
+                # Convert inputs to JAX arrays
+                print(f"\nTesting diffQuat with inputs: q1={q1}, q2={q2}")
+                q1_jax = jp.array(q1, dtype=jp.float32)
+                q2_jax = jp.array(q2, dtype=jp.float32)
+                
+                # Compute results from both implementations
+                result_np = np_diffQuat(q1, q2)
+                result_jax = jax_diffQuat(q1_jax, q2_jax)
+                
+                print(f"NumPy result: {result_np}")
+                print(f"JAX result: {result_jax}")
+                print(f"Expected result: {expected_result}")
+                
+                # Convert JAX result to numpy for comparison
+                result_jax = np.array(result_jax)
+                
+                # Compare results
+                np.testing.assert_allclose(
+                    result_np, 
+                    result_jax, 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Results don't match for q1={q1}, q2={q2}"
+                )
+                
+                # Compare with expected results
+                np.testing.assert_allclose(
+                    np.abs(result_jax), 
+                    np.abs(expected_result), 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Result doesn't match expected for q1={q1}, q2={q2}"
+                )
+                
+        except Exception as e:
+            print(f"Error in diffQuat test: {str(e)}")
+            raise
+
+    def test_diffQuat_properties(self):
+        """Test mathematical properties of quaternion difference"""
+        try:
+            for q1, q2 in self.diff_test_cases:
+                q1_jax = jp.array(q1, dtype=jp.float32)
+                q2_jax = jp.array(q2, dtype=jp.float32)
+                
+                # Property 1: diff(q, q) should be identity quaternion
+                result = jax_diffQuat(q1_jax, q1_jax)
+                identity = jp.array([1., 0., 0., 0.], dtype=jp.float32)
+                np.testing.assert_allclose(
+                    np.array(result),
+                    identity,
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg=f"Self-difference not identity for q={q1}"
+                )
+                
+                # Property 2: Norm preservation
+                result = jax_diffQuat(q1_jax, q2_jax)
+                norm = jp.sqrt(jp.sum(result * result))
+                np.testing.assert_allclose(
+                    float(norm),
+                    1.0,
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg=f"Norm not preserved for q1={q1}, q2={q2}"
+                )
+                
+                # Property 3: diff(q1,q2) * q1 = q2 (up to numerical precision)
+                diff_result = jax_diffQuat(q1_jax, q2_jax)
+                reconstructed = jax_mulQuat(diff_result, q1_jax)
+                np.testing.assert_allclose(
+                    np.abs(np.array(reconstructed)),
+                    np.abs(q2),
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg=f"Reconstruction failed for q1={q1}, q2={q2}"
+                )
+                
+        except Exception as e:
+            print(f"Error in diffQuat properties test: {str(e)}")
             raise
 
 

@@ -7,12 +7,11 @@ _EPS4 = _FLOAT_EPS * 4.0
 
 
 def mulQuat(qa, qb):
-    res = jp.zeros(4)
-    res = res.at[0].set(qa[0] * qb[0] - qa[1] * qb[1] - qa[2] * qb[2] - qa[3] * qb[3])
-    res = res.at[1].set(qa[0] * qb[1] + qa[1] * qb[0] + qa[2] * qb[3] - qa[3] * qb[2])
-    res = res.at[2].set(qa[0] * qb[2] - qa[1] * qb[3] + qa[2] * qb[0] + qa[3] * qb[1])
-    res = res.at[3].set(qa[0] * qb[3] + qa[1] * qb[2] - qa[2] * qb[1] + qa[3] * qb[0])
-    return res
+    res0 = qa[0] * qb[0] - qa[1] * qb[1] - qa[2] * qb[2] - qa[3] * qb[3]
+    res1 = qa[0] * qb[1] + qa[1] * qb[0] + qa[2] * qb[3] - qa[3] * qb[2]
+    res2 = qa[0] * qb[2] - qa[1] * qb[3] + qa[2] * qb[0] + qa[3] * qb[1]
+    res3 = qa[0] * qb[3] + qa[1] * qb[2] - qa[2] * qb[1] + qa[3] * qb[0]
+    return jp.array([res0, res1, res2, res3])
 
 
 def negQuat(quat):
