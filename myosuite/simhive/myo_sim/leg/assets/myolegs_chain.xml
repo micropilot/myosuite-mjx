@@ -7,13 +7,14 @@
 	License	:: Under Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 ====================================================== -->
 
-    <body name="pelvis" pos="0 0 0" quat="0.707107 0.707107 0 0" childclass="myolegs">
+    <body name="pelvis" pos="0 0 0" quat="0.707107 0.707107 0 0" childclass="myolegs">>
         <site name="pelvis" class="myo_leg_marker"/>
         <inertial pos="-0.07 -0.03 0" mass="10.96" diaginertia="0.0622075 0.0532711 0.0299242" />
         <geom name="r_pelvis_col" type="ellipsoid" size=".110 .13 0.11" class="coll" pos="-.08 -.03 0.07" euler="0.2 0 0" mass="2"/>
         <geom name="l_pelvis_col" type="ellipsoid" size=".110 .13 0.11" class="coll" pos="-.08 -.03 -.07" euler="-.2 0 0" mass="2"/>
         <geom mesh="r_pelvis" name="r_pelvis" type="mesh"/>
         <geom mesh="l_pelvis" name="l_pelvis" type="mesh"/>
+        <geom mesh="sacrum" name="sacrum" type="mesh"/>
         <geom name="Gmax1_at_pelvis_r_wrap" pos="-0.077 -0.099 0.061" quat="0.931256 -0.288071 0.213142 -0.0659324" class="wrap" size="0.04 0.075"/>
         <geom name="Gmax2_at_pelvis_r_wrap" pos="-0.08 -0.083 0.068" quat="0.912872 -0.359331 0.180301 -0.0709714" class="wrap" size="0.04 0.05"/>
         <geom name="Gmax3_at_pelvis_r_wrap" pos="-0.083 -0.088 0.068" quat="0.99875 -0.0499792 0 0" class="wrap" size="0.04 0.05"/>

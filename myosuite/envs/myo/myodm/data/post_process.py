@@ -1,4 +1,3 @@
-
 import glob
 import numpy as np
 import os
@@ -15,11 +14,12 @@ data_dict = {}
 # Loop through each .npz file and load its data
 for npz_file in npz_files:
     with np.load(npz_file) as data:
-        np.savez(npz_file,
-            time=data['time'],
-            robot=data['robot'],
-            object=data['object'],
-            robot_init=data['robot_int'],
-            object_init=data['object_int'],
-            )
-        print('saved', npz_file)
+        np.savez(
+            npz_file,
+            time=data["time"],
+            robot=data["robot"],
+            object=data["object"],
+            robot_init=data["robot_int"],
+            object_init=data["object_int"],
+        )
+        print("saved", npz_file)
