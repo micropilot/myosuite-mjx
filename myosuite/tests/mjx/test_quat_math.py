@@ -15,7 +15,8 @@ from myosuite.utils.quat_math import (mulQuat as np_mulQuat, negQuat as np_negQu
                                      mat2euler as np_mat2euler,
                                      mat2quat as np_mat2quat,
                                      quat2euler as np_quat2euler,
-                                     quat2mat as np_quat2mat)
+                                     quat2mat as np_quat2mat,
+                                     rotVecMatT as np_rotVecMatT)
 from myosuite.mjx.quat_math import (mulQuat as jax_mulQuat, negQuat as jax_negQuat, 
                                    quat2Vel as jax_quat2Vel, diffQuat as jax_diffQuat,
                                    quatDiff2Vel as jax_quatDiff2Vel,
@@ -25,7 +26,9 @@ from myosuite.mjx.quat_math import (mulQuat as jax_mulQuat, negQuat as jax_negQu
                                    mat2euler as jax_mat2euler,
                                    mat2quat as jax_mat2quat,
                                    quat2euler as jax_quat2euler,
-                                   quat2mat as jax_quat2mat)
+                                   quat2mat as jax_quat2mat,
+                                   rotVecMatT as jax_rotVecMatT,
+                                   rotVecMat as jax_rotVecMat)
 
 
 class TestQuatMath(unittest.TestCase):
@@ -446,6 +449,49 @@ class TestQuatMath(unittest.TestCase):
             np.array([[0.3536, -0.6124, 0.7071],
                      [0.866007, 0.500033, 0.],
                      [-0.353576, 0.612359, 0.707107]], dtype=np.float32),
+        ]
+
+        # Add test cases for rotVecMatT
+        self.rotVecMatT_test_cases = [
+            # Identity rotation (no change)
+            (np.array([1., 0., 0.], dtype=np.float32),  # x-axis vector
+             np.eye(3, dtype=np.float32)),  # identity matrix
+            
+            (np.array([0., 1., 0.], dtype=np.float32),  # y-axis vector
+             np.eye(3, dtype=np.float32)),  # identity matrix
+            
+            # 90-degree rotations
+            (np.array([1., 0., 0.], dtype=np.float32),  # x-axis vector
+             np.array([[1., 0., 0.],
+                      [0., 0., -1.],
+                      [0., 1., 0.]], dtype=np.float32)),  # 90° around x
+            
+            (np.array([0., 1., 0.], dtype=np.float32),  # y-axis vector
+             np.array([[0., 0., 1.],
+                      [0., 1., 0.],
+                      [-1., 0., 0.]], dtype=np.float32)),  # 90° around y
+            
+            # 45-degree rotation
+            (np.array([1., 1., 1.], dtype=np.float32),  # diagonal vector
+             np.array([[0.7071068, -0.7071068, 0.],
+                      [0.7071068, 0.7071068, 0.],
+                      [0., 0., 1.]], dtype=np.float32)),  # 45° around z
+            
+            # Arbitrary vector and rotation
+            (np.array([0.5, -0.3, 0.8], dtype=np.float32),
+             np.array([[0.3536, -0.6124, 0.7071],
+                      [0.866007, 0.500033, 0.],
+                      [-0.353576, 0.612359, 0.707107]], dtype=np.float32)),
+        ]
+
+        # Expected results for rotVecMatT
+        self.rotVecMatT_expected_results = [
+            np.array([1., 0., 0.], dtype=np.float32),  # No change for identity
+            np.array([0., 1., 0.], dtype=np.float32),  # No change for identity
+            np.array([1., 0., 0.], dtype=np.float32),  # 90° x rotation
+            np.array([0., 1., 0.], dtype=np.float32),  # 90° y rotation
+            np.array([1.414214, 0., 1.], dtype=np.float32),  # 45° z rotation
+            np.array([-0.365863,  0.033677,  0.919236], dtype=np.float32),  # Arbitrary rotation
         ]
 
     def test_mulQuat_implementations_match(self):
@@ -1406,6 +1452,95 @@ class TestQuatMath(unittest.TestCase):
                 
         except Exception as e:
             print(f"Error in quat2mat properties test: {str(e)}")
+            raise
+
+    def test_rotVecMatT_implementations_match(self):
+        """Test that JAX and NumPy implementations of rotVecMatT give the same results"""
+        try:
+            for (vec, mat), expected_result in zip(self.rotVecMatT_test_cases, 
+                                                 self.rotVecMatT_expected_results):
+                # Convert inputs to JAX arrays
+                print(f"\nTesting rotVecMatT with inputs:\nvec={vec}\nmat=\n{mat}")
+                vec_jax = jp.array(vec, dtype=jp.float32)
+                mat_jax = jp.array(mat, dtype=jp.float32)
+                
+                # Compute results from both implementations
+                result_np = np_rotVecMatT(vec, mat)
+                result_jax = jax_rotVecMatT(vec_jax, mat_jax)
+                
+                print(f"NumPy result: {result_np}")
+                print(f"JAX result: {result_jax}")
+                print(f"Expected result: {expected_result}")
+                
+                # Convert JAX result to numpy for comparison
+                result_jax = np.array(result_jax)
+                
+                # Compare results
+                np.testing.assert_allclose(
+                    result_np, 
+                    result_jax, 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Results don't match for vec={vec}, mat=\n{mat}"
+                )
+                
+                # Compare with expected results
+                np.testing.assert_allclose(
+                    result_jax, 
+                    expected_result, 
+                    rtol=1e-4, 
+                    atol=1e-4,
+                    err_msg=f"Result doesn't match expected for vec={vec}, mat=\n{mat}"
+                )
+                
+        except Exception as e:
+            print(f"Error in rotVecMatT test: {str(e)}")
+            raise
+
+    def test_rotVecMatT_properties(self):
+        """Test mathematical properties of vector rotation by matrix transpose"""
+        try:
+            for (vec, mat), expected_result in zip(self.rotVecMatT_test_cases, 
+                                                 self.rotVecMatT_expected_results):
+                vec_jax = jp.array(vec, dtype=jp.float32)
+                mat_jax = jp.array(mat, dtype=jp.float32)
+                
+                # Property 1: Length preservation
+                result = jax_rotVecMatT(vec_jax, mat_jax)
+                orig_length = jp.sqrt(jp.sum(vec_jax * vec_jax))
+                result_length = jp.sqrt(jp.sum(result * result))
+                np.testing.assert_allclose(
+                    float(result_length),
+                    float(orig_length),
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg=f"Length not preserved for vec={vec}, mat=\n{mat}"
+                )
+                
+                # Property 2: Identity matrix should not change the vector
+                if jp.allclose(mat_jax, jp.eye(3)):
+                    np.testing.assert_allclose(
+                        np.array(result),
+                        vec,
+                        rtol=1e-5,
+                        atol=1e-5,
+                        err_msg="Identity matrix changed the vector"
+                    )
+                
+                # Property 3: Double rotation by mat and mat.T should give original vector
+                # First rotate by mat.T, then by mat
+                intermediate = jax_rotVecMatT(vec_jax, mat_jax)
+                final = jax_rotVecMat(intermediate, mat_jax)
+                np.testing.assert_allclose(
+                    np.array(final),
+                    vec,
+                    rtol=1e-4,
+                    atol=1e-4,
+                    err_msg=f"Double rotation failed for vec={vec}, mat=\n{mat}"
+                )
+                
+        except Exception as e:
+            print(f"Error in rotVecMatT properties test: {str(e)}")
             raise
 
 

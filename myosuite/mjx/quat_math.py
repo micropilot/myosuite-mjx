@@ -106,7 +106,7 @@ def mat2euler(mat):
 
 def mat2quat(mat):
     """ Convert a 3x3 normalized rotation matrix to a quaternion using JAX. """
-    mat = jp.asarray(mat, dtype=jp.float64)
+    mat = jp.asarray(mat, dtype=jp.float32)
     assert mat.shape == (3, 3), f"Invalid shape matrix {mat.shape}"
 
     def case_1(mat):
