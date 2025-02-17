@@ -11,13 +11,15 @@ from myosuite.utils.quat_math import (mulQuat as np_mulQuat, negQuat as np_negQu
                                      quatDiff2Vel as np_quatDiff2Vel, 
                                      axis_angle2quat as np_axis_angle2quat,
                                      euler2mat as np_euler2mat,
-                                     intrinsic_euler2quat as np_euler2quat)
+                                     intrinsic_euler2quat as np_euler2quat,
+                                     mat2euler as np_mat2euler)
 from myosuite.mjx.quat_math import (mulQuat as jax_mulQuat, negQuat as jax_negQuat, 
                                    quat2Vel as jax_quat2Vel, diffQuat as jax_diffQuat,
                                    quatDiff2Vel as jax_quatDiff2Vel,
                                    axis_angle2quat as jax_axis_angle2quat,
                                    euler2mat as jax_euler2mat,
-                                   intrinsic_euler2quat as jax_euler2quat)
+                                   intrinsic_euler2quat as jax_euler2quat,
+                                   mat2euler as jax_mat2euler)
 
 
 class TestQuatMath(unittest.TestCase):
@@ -253,6 +255,55 @@ class TestQuatMath(unittest.TestCase):
             np.array([0.853553, 0.353553, 0.146447, 0.353553], dtype=np.float32),
             np.array([0.85355335, -0.14644663, 0.3535534, 0.3535534], dtype=np.float32),
             np.array([0.822363, 0.02226 , 0.43968 , 0.360423], dtype=np.float32),
+        ]
+
+        # Add test cases for mat2euler
+        self.mat2euler_test_cases = [
+            # Identity matrix (no rotation)
+            np.eye(3, dtype=np.float32),
+            
+            # 90-degree rotations around principal axes
+            np.array([[1., 0., 0.],
+                     [0., 0., -1.],
+                     [0., 1., 0.]], dtype=np.float32),  # 90° around x
+            
+            np.array([[0., 0., 1.],
+                     [0., 1., 0.],
+                     [-1., 0., 0.]], dtype=np.float32),  # 90° around y
+            
+            np.array([[0., -1., 0.],
+                     [1., 0., 0.],
+                     [0., 0., 1.]], dtype=np.float32),  # 90° around z
+            
+            # 45-degree rotations
+            np.array([[1., 0., 0.],
+                     [0., 0.7071068, -0.7071068],
+                     [0., 0.7071068, 0.7071068]], dtype=np.float32),  # 45° around x
+            
+            np.array([[0.7071068, 0., 0.7071068],
+                     [0., 1., 0.],
+                     [-0.7071068, 0., 0.7071068]], dtype=np.float32),  # 45° around y
+            
+            np.array([[0.7071068, -0.7071068, 0.],
+                     [0.7071068, 0.7071068, 0.],
+                     [0., 0., 1.]], dtype=np.float32),  # 45° around z
+            
+            # Combined rotations
+            np.array([[0.3536, -0.6124, 0.7071],
+                     [0.866007,  0.500033,  0.],
+                     [-0.353576,  0.612359,  0.707107]], dtype=np.float32),  # Combined rotation
+        ]
+
+        # Expected Euler angles for each rotation matrix
+        self.mat2euler_expected_results = [
+            np.array([0., 0., 0.], dtype=np.float32),  # No rotation
+            np.array([np.pi/2, 0., 0.], dtype=np.float32),  # 90° x
+            np.array([0., np.pi/2, 0.], dtype=np.float32),  # 90° y
+            np.array([0., 0., np.pi/2], dtype=np.float32),  # 90° z
+            np.array([np.pi/4, 0., 0.], dtype=np.float32),  # 45° x
+            np.array([0., np.pi/4, 0.], dtype=np.float32),  # 45° y
+            np.array([0., 0., np.pi/4], dtype=np.float32),  # 45° z
+            np.array([0., np.pi/4, np.pi/3], dtype=np.float32),  # Combined
         ]
 
     def test_mulQuat_implementations_match(self):
@@ -853,6 +904,95 @@ class TestQuatMath(unittest.TestCase):
                 
         except Exception as e:
             print(f"Error in euler2quat properties test: {str(e)}")
+            raise
+
+    def test_mat2euler_implementations_match(self):
+        """Test that JAX and NumPy implementations of mat2euler give the same results"""
+        try:
+            for mat, expected_euler in zip(self.mat2euler_test_cases, 
+                                         self.mat2euler_expected_results):
+                # Convert input to JAX array
+                print(f"\nTesting mat2euler with input matrix:\n{mat}")
+                mat_jax = jp.array(mat, dtype=jp.float32)
+                
+                # Compute results from both implementations
+                result_np = np_mat2euler(mat)
+                result_jax = jax_mat2euler(mat_jax)
+                
+                print(f"NumPy result: {result_np}")
+                print(f"JAX result: {result_jax}")
+                print(f"Expected result: {expected_euler}")
+                
+                # Convert JAX result to numpy for comparison
+                result_jax = np.array(result_jax)
+                
+                # Compare results
+                # Note: We need to handle angle wrapping (e.g., -π and π are equivalent)
+                np.testing.assert_allclose(
+                    np.sin(result_np), 
+                    np.sin(result_jax), 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Results don't match for matrix:\n{mat}"
+                )
+                np.testing.assert_allclose(
+                    np.cos(result_np), 
+                    np.cos(result_jax), 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Results don't match for matrix:\n{mat}"
+                )
+                
+                # Compare with expected results
+                np.testing.assert_allclose(
+                    np.sin(result_jax), 
+                    np.sin(expected_euler), 
+                    rtol=1e-3, 
+                    atol=1e-3,
+                    err_msg=f"Result doesn't match expected for matrix:\n{mat}"
+                )
+                np.testing.assert_allclose(
+                    np.cos(result_jax), 
+                    np.cos(expected_euler), 
+                    rtol=1e-3, 
+                    atol=1e-3,
+                    err_msg=f"Result doesn't match expected for matrix:\n{mat}"
+                )
+                
+        except Exception as e:
+            print(f"Error in mat2euler test: {str(e)}")
+            raise
+
+    def test_mat2euler_properties(self):
+        """Test mathematical properties of rotation matrix to Euler angles conversion"""
+        try:
+            for mat, expected_euler in zip(self.mat2euler_test_cases, 
+                                         self.mat2euler_expected_results):
+                mat_jax = jp.array(mat, dtype=jp.float32)
+                
+                # Property 1: Converting back to matrix should give original matrix
+                euler = jax_mat2euler(mat_jax)
+                reconstructed_mat = jax_euler2mat(euler)
+                np.testing.assert_allclose(
+                    np.array(reconstructed_mat),
+                    mat,
+                    rtol=1e-3,
+                    atol=1e-3,
+                    err_msg=f"Reconstruction failed for matrix:\n{mat}"
+                )
+                
+                # Property 2: Identity matrix should give zero angles
+                if jp.allclose(mat_jax, jp.eye(3)):
+                    np.testing.assert_allclose(
+                        np.array(euler),
+                        np.zeros(3),
+                        rtol=1e-5,
+                        atol=1e-5,
+                        err_msg="Identity matrix doesn't give zero angles"
+                    )
+                
+        except Exception as e:
+            print(f"Error in mat2euler properties test: {str(e)}")
             raise
 
 
