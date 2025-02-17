@@ -1882,6 +1882,100 @@ class TestQuatMath(unittest.TestCase):
             print(f"Error in quat2euler_intrinsic properties test: {str(e)}")
             raise
 
+    def test_euler2quat_implementations_match(self):
+        """Test that JAX and NumPy implementations of intrinsic_euler2quat give the same results"""
+        try:
+            for euler, expected_quat in zip(self.euler2quat_test_cases, 
+                                          self.euler2quat_expected_results):
+                # Convert input to JAX array
+                print(f"\nTesting euler2quat with input Euler angles: {euler}")
+                euler_jax = jp.array(euler, dtype=jp.float32)
+                
+                # Compute results from both implementations
+                result_np = np_euler2quat(euler)
+                result_jax = jax_euler2quat(euler_jax)
+                
+                print(f"NumPy result: {result_np}")
+                print(f"JAX result: {result_jax}")
+                print(f"Expected result: {expected_quat}")
+                
+                # Convert JAX result to numpy for comparison
+                result_jax = np.array(result_jax)
+                
+                # Compare results (using absolute values due to possible sign differences)
+                np.testing.assert_allclose(
+                    np.abs(result_np), 
+                    np.abs(result_jax), 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Results don't match for Euler angles: {euler}"
+                )
+                
+                # Compare with expected results
+                np.testing.assert_allclose(
+                    np.abs(result_jax), 
+                    np.abs(expected_quat), 
+                    rtol=1e-4, 
+                    atol=1e-4,
+                    err_msg=f"Result doesn't match expected for Euler angles: {euler}"
+                )
+                
+        except Exception as e:
+            print(f"Error in euler2quat test: {str(e)}")
+            raise
+
+    def test_euler2quat_properties(self):
+        """Test mathematical properties of Euler angles to quaternion conversion"""
+        try:
+            for euler, expected_quat in zip(self.euler2quat_test_cases, 
+                                          self.euler2quat_expected_results):
+                euler_jax = jp.array(euler, dtype=jp.float32)
+                
+                # Property 1: Result should be a unit quaternion
+                result = jax_euler2quat(euler_jax)
+                norm = jp.sqrt(jp.sum(result * result))
+                np.testing.assert_allclose(
+                    float(norm),
+                    1.0,
+                    rtol=1e-5,
+                    atol=1e-5,
+                    err_msg=f"Result not unit quaternion for Euler angles: {euler}"
+                )
+                
+                # Property 2: Zero angles should give identity quaternion
+                if jp.allclose(euler_jax, jp.zeros(3)):
+                    identity_quat = jp.array([1., 0., 0., 0.], dtype=jp.float32)
+                    np.testing.assert_allclose(
+                        np.abs(np.array(result)),
+                        np.abs(identity_quat),
+                        rtol=1e-5,
+                        atol=1e-5,
+                        err_msg="Zero angles don't give identity quaternion"
+                    )
+                
+                # Property 3: Converting back to Euler angles should give original angles
+                reconstructed_euler = jax_quat2euler_intrinsic(result)
+                np.testing.assert_allclose(
+                    np.sin(np.array(reconstructed_euler)),
+                    np.sin(euler),
+                    rtol=1e-3,
+                    atol=1e-3,
+                    err_msg=f"Reconstruction failed for Euler angles: {euler}"
+                )
+                print (f"Reconstructed euler: {reconstructed_euler}")
+                print (f"Euler: {euler}")
+                np.testing.assert_allclose(
+                    np.cos(np.array(reconstructed_euler)),
+                    np.cos(euler),
+                    rtol=1e-3,
+                    atol=1e-3,
+                    err_msg=f"Reconstruction failed for Euler angles: {euler}"
+                )
+                
+        except Exception as e:
+            print(f"Error in euler2quat properties test: {str(e)}")
+            raise
+
 
 if __name__ == '__main__':
     try:
