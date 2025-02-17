@@ -18,7 +18,8 @@ from myosuite.utils.quat_math import (mulQuat as np_mulQuat, negQuat as np_negQu
                                      quat2mat as np_quat2mat,
                                      rotVecMatT as np_rotVecMatT,
                                      rotVecMat as np_rotVecMat,
-                                     rotVecQuat as np_rotVecQuat)
+                                     rotVecQuat as np_rotVecQuat,
+                                     quat2euler_intrinsic as np_quat2euler_intrinsic)
 from myosuite.mjx.quat_math import (mulQuat as jax_mulQuat, negQuat as jax_negQuat, 
                                    quat2Vel as jax_quat2Vel, diffQuat as jax_diffQuat,
                                    quatDiff2Vel as jax_quatDiff2Vel,
@@ -31,7 +32,8 @@ from myosuite.mjx.quat_math import (mulQuat as jax_mulQuat, negQuat as jax_negQu
                                    quat2mat as jax_quat2mat,
                                    rotVecMatT as jax_rotVecMatT,
                                    rotVecMat as jax_rotVecMat,
-                                   rotVecQuat as jax_rotVecQuat)
+                                   rotVecQuat as jax_rotVecQuat,
+                                   quat2euler_intrinsic as jax_quat2euler_intrinsic)
 
 
 class TestQuatMath(unittest.TestCase):
@@ -569,6 +571,33 @@ class TestQuatMath(unittest.TestCase):
             np.array([0., 1., 0.], dtype=np.float32),  # 90° y rotation
             np.array([0., 1.414214, 1.], dtype=np.float32),  # 45° z rotation
             np.array([0.9262  , 0.282994, 0.20519], dtype=np.float32),  # Arbitrary rotation
+        ]
+
+        # Add test cases for quat2euler_intrinsic
+        self.quat2euler_intrinsic_test_cases = [
+            # Identity quaternion (no rotation)
+            np.array([1., 0., 0., 0.], dtype=np.float32),
+            
+            # 90-degree rotations around principal axes
+            np.array([0.7071068, 0.7071068, 0., 0.], dtype=np.float32),  # x-axis
+            np.array([0.7071068, 0., 0.7071068, 0.], dtype=np.float32),  # y-axis
+            np.array([0.7071068, 0., 0., 0.7071068], dtype=np.float32),  # z-axis
+            
+            # 45-degree rotations around principal axes
+            np.array([0.9238795, 0.3826834, 0., 0.], dtype=np.float32),  # x-axis
+            np.array([0.9238795, 0., 0.3826834, 0.], dtype=np.float32),  # y-axis
+            np.array([0.9238795, 0., 0., 0.3826834], dtype=np.float32),  # z-axis            
+        ]
+
+        # Expected Euler angles for each quaternion
+        self.quat2euler_intrinsic_expected_results = [
+            np.array([0., 0., 0.], dtype=np.float32),  # No rotation
+            np.array([np.pi/2, 0., 0.], dtype=np.float32),  # 90° x
+            np.array([np.pi, np.pi/2, np.pi], dtype=np.float32),  # 90° y
+            np.array([0., 0., np.pi/2], dtype=np.float32),  # 90° z
+            np.array([np.pi/4, 0., 0.], dtype=np.float32),  # 45° x
+            np.array([0., np.pi/4, 0.], dtype=np.float32),  # 45° y
+            np.array([0., 0., np.pi/4], dtype=np.float32),  # 45° z
         ]
 
     def test_mulQuat_implementations_match(self):
@@ -1754,6 +1783,103 @@ class TestQuatMath(unittest.TestCase):
                 
         except Exception as e:
             print(f"Error in rotation properties test: {str(e)}")
+            raise
+
+    def test_quat2euler_intrinsic_implementations_match(self):
+        """Test that JAX and NumPy implementations of quat2euler_intrinsic give the same results"""
+        try:
+            for quat, expected_euler in zip(self.quat2euler_intrinsic_test_cases, 
+                                          self.quat2euler_intrinsic_expected_results):
+                # Convert input to JAX array
+                print(f"\nTesting quat2euler_intrinsic with input quaternion: {quat}")
+                quat_jax = jp.array(quat, dtype=jp.float32)
+                
+                # Compute results from both implementations
+                result_np = np_quat2euler_intrinsic(quat)
+                result_jax = jax_quat2euler_intrinsic(quat_jax)
+                
+                print(f"NumPy result: {result_np}")
+                print(f"JAX result: {result_jax}")
+                print(f"Expected result: {expected_euler}")
+                
+                # Convert JAX result to numpy for comparison
+                result_jax = np.array(result_jax)
+                
+                # Compare results (using sin/cos to handle angle wrapping)
+                np.testing.assert_allclose(
+                    np.sin(result_np), 
+                    np.sin(result_jax), 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Results don't match for quaternion: {quat}"
+                )
+                np.testing.assert_allclose(
+                    np.cos(result_np), 
+                    np.cos(result_jax), 
+                    rtol=1e-5, 
+                    atol=1e-5,
+                    err_msg=f"Results don't match for quaternion: {quat}"
+                )
+                
+                # Compare with expected results
+                np.testing.assert_allclose(
+                    np.sin(result_jax), 
+                    np.sin(expected_euler), 
+                    rtol=1e-4, 
+                    atol=1e-4,
+                    err_msg=f"Result doesn't match expected for quaternion: {quat}"
+                )
+                np.testing.assert_allclose(
+                    np.cos(result_jax), 
+                    np.cos(expected_euler), 
+                    rtol=1e-4, 
+                    atol=1e-4,
+                    err_msg=f"Result doesn't match expected for quaternion: {quat}"
+                )
+                
+        except Exception as e:
+            print(f"Error in quat2euler_intrinsic test: {str(e)}")
+            raise
+
+    def test_quat2euler_intrinsic_properties(self):
+        """Test mathematical properties of quaternion to intrinsic Euler angles conversion"""
+        try:
+            for quat, expected_euler in zip(self.quat2euler_intrinsic_test_cases, 
+                                          self.quat2euler_intrinsic_expected_results):
+                quat_jax = jp.array(quat, dtype=jp.float32)
+                
+                # Property 1: Converting back to quaternion should give original quaternion
+                euler = jax_quat2euler_intrinsic(quat_jax)
+                reconstructed_quat = jax_euler2quat(euler)
+                
+                # Compare quaternions (using absolute values due to possible sign differences)
+                np.testing.assert_allclose(
+                    np.abs(np.array(reconstructed_quat)),
+                    np.abs(quat),
+                    rtol=1e-3,
+                    atol=1e-3,
+                    err_msg=f"Reconstruction failed for quaternion: {quat}"
+                )
+                
+                # Property 2: Identity quaternion should give zero angles
+                if jp.allclose(quat_jax, jp.array([1., 0., 0., 0.])):
+                    np.testing.assert_allclose(
+                        np.array(euler),
+                        np.zeros(3),
+                        rtol=1e-5,
+                        atol=1e-5,
+                        err_msg="Identity quaternion doesn't give zero angles"
+                    )
+                
+                # Property 3: Angles should be in valid ranges
+                euler_np = np.array(euler)
+                self.assertTrue(
+                    np.all(euler_np >= -np.pi) and np.all(euler_np <= np.pi),
+                    f"Euler angles out of range [-π, π] for quaternion: {quat}"
+                )
+                
+        except Exception as e:
+            print(f"Error in quat2euler_intrinsic properties test: {str(e)}")
             raise
 
 
