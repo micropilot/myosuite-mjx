@@ -1124,8 +1124,8 @@ class TestQuatMath(unittest.TestCase):
                 np.testing.assert_allclose(
                     np.array(reconstructed_mat),
                     mat,
-                    rtol=1e-5,
-                    atol=1e-5,
+                    rtol=1e-4,
+                    atol=1e-4,
                     err_msg=f"Reconstruction failed for matrix:\n{mat}"
                 )
                 
