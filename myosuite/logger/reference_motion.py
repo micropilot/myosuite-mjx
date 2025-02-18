@@ -128,7 +128,7 @@ class ReferenceMotion:
         if reference["object_init"] is not None and reference["object"] is not None:
             assert (
                 reference["object_init"].shape[0] == reference["object"].shape[1]
-            ), "n_object_jnt different between motion and init "
+            ), f"n_object_jnt different between motion and init"
 
     def load(self, reference_data):
         """
@@ -197,12 +197,10 @@ class ReferenceMotion:
 
         # search locally for index
         if time == self.reference["time"][self.index_cache]:
-            # print(f"curr match: {time}")
             return (self.index_cache, self.index_cache)
 
         elif self.index_cache < (self.horizon - 1):
             if time == self.reference["time"][self.index_cache + 1]:
-                # print(f"next match: {time}")
                 self.index_cache += 1
                 return (self.index_cache, self.index_cache)
 
@@ -210,7 +208,6 @@ class ReferenceMotion:
                 time > self.reference["time"][self.index_cache]
                 and time < self.reference["time"][self.index_cache + 1]
             ):
-                # print(f"interval match: {time}")
                 return (self.index_cache, self.index_cache + 1)
             else:
                 print(
@@ -296,7 +293,6 @@ class ReferenceMotion:
                 blend = time - self.reference["time"][ind] / (
                     self.reference["time"][ind_next] - self.reference["time"][ind]
                 )
-
                 # robot motion
                 if self.robot_horizon > 1:
                     robot_ref = (1.0 - blend) ** self.reference["robot"][
@@ -337,10 +333,3 @@ class ReferenceMotion:
 
     def __repr__(self) -> str:
         return self.reference.__repr__()
-
-
-# ref = ReferenceMotion(reference_data="myosuite/envs/myo/myodm/data/MyoHand_airplane_fly1.npz")
-# print ('horizon:', ref.horizon)
-# robot_init, object_init = ref.get_init()
-# print ('robot_init:', robot_init)
-# print ('object_init:', object_init)

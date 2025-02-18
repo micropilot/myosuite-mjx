@@ -35,7 +35,8 @@ class ReferenceType(enum.Enum):
 # Reference motion
 class ReferenceMotion:
     def __init__(
-        self, reference_data: Union[str, dict], motion_extrapolation: bool = False
+        self, reference_data: Union[str, dict], 
+        motion_extrapolation: bool = False
     ):
         """
         Reference Type
@@ -250,29 +251,49 @@ class ReferenceMotion:
                 maxval=self.reference["object"][1, :],
             )
         elif self.type == ReferenceType.TRACK:
-            ind, ind_next = self.find_timeslot_in_reference(time)
-            blend = (time - self.reference["time"][ind]) / (
-                self.reference["time"][ind_next] - self.reference["time"][ind]
-            )
+            ind, ind_next = self.find_timeslot_in_reference(time=time)
+            if ind == ind_next:
+                # Exact frame[time] found for reference
+                robot_ref = (
+                    self.reference["robot"][ind]
+                    if self.robot_horizon > 1
+                    else self.reference["robot"][0]
+                )
+                robot_vel_ref = (
+                    None if self.reference["robot_vel"] is None
+                    else self.reference["robot_vel"][ind]
+                )
+                object_ref = (
+                    None if self.reference["object"] is None
+                    else self.reference["object"][ind]
+                )
+            else:
+                # Linearly interpolate between frames to get references
+                blend = time - self.reference["time"][ind] / (
+                    self.reference["time"][ind_next] - self.reference["time"][ind]
+                )
+                # robot motion
+                if self.robot_horizon > 1:
+                    robot_ref = (1.0 - blend) ** self.reference["robot"][ind] + blend * self.reference["robot"][ind_next]
+                    robot_vel_ref = (
+                        None if self.reference["robot_vel"] is None
+                        else (1.0 - blend) ** self.reference["robot_vel"][ind] + blend * self.reference["robot_vel"][ind_next]
+                    )
+                else:
+                    robot_ref = self.reference["robot"][0]
+                    robot_vel_ref = (
+                        None if self.reference["robot_vel"] is None
+                        else self.reference["robot_vel"][0]
+                    )
 
-            # Interpolate robot and object references
-            robot_ref = (1 - blend) * self.reference["robot"][
-                ind
-            ] + blend * self.reference["robot"][ind_next]
-            robot_vel_ref = (
-                None
-                if self.reference["robot_vel"] is None
-                else (1 - blend) * self.reference["robot_vel"][ind]
-                + blend * self.reference["robot_vel"][ind_next]
-            )
-            object_ref = (
-                None
-                if self.reference["object"] is None
-                else (1 - blend) * self.reference["object"][ind]
-                + blend * self.reference["object"][ind_next]
-            )
-
-        # print ("After", type(time), type(robot_ref), type(robot_vel_ref), type(object_ref))
+                # object motion
+                if self.reference["object"] is None:
+                    object_ref = None
+                elif self.object_horizon > 1:
+                    object_ref = (1.0 - blend) * self.reference["object"][ind] + blend * self.reference["object"][ind_next]
+                else:
+                    object_ref = self.reference["object"][0]
+            
         return ReferenceStruct(
             time=time,
             robot=robot_ref,
