@@ -296,7 +296,6 @@ class ReferenceMotion:
                 blend = time - self.reference["time"][ind] / (
                     self.reference["time"][ind_next] - self.reference["time"][ind]
                 )
-
                 # robot motion
                 if self.robot_horizon > 1:
                     robot_ref = (1.0 - blend) ** self.reference["robot"][
@@ -337,10 +336,3 @@ class ReferenceMotion:
 
     def __repr__(self) -> str:
         return self.reference.__repr__()
-
-
-# ref = ReferenceMotion(reference_data="myosuite/envs/myo/myodm/data/MyoHand_airplane_fly1.npz")
-# print ('horizon:', ref.horizon)
-# robot_init, object_init = ref.get_init()
-# print ('robot_init:', robot_init)
-# print ('object_init:', object_init)
