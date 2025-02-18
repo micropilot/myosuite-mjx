@@ -328,5 +328,166 @@ class TestReferenceMotion(unittest.TestCase):
         with self.assertRaises(AssertionError):
             _ = numpy_ref.get_reference(test_time)
 
+    def test_missing_init_fixed(self):
+        """Test initialization when robot_init and object_init are missing for fixed reference"""
+        # Create reference data without init values
+        fixed_ref_no_init = {
+            "time": np.array([0.0]),
+            "robot": np.array([[1.0, 2.0, 3.0]]),
+            "robot_vel": np.array([[0.1, 0.2, 0.3]]),
+            "object": np.array([[4.0, 5.0, 6.0]])
+        }
+        
+        # Create references
+        jax_ref = JaxReferenceMotion(fixed_ref_no_init)
+        numpy_ref = NumpyReferenceMotion(fixed_ref_no_init)
+        
+        # Get initial states
+        jax_robot_init, jax_object_init = jax_ref.get_init()
+        numpy_robot_init, numpy_object_init = numpy_ref.get_init()
+        
+        # For fixed type, init should be first frame
+        expected_robot_init = fixed_ref_no_init["robot"][0]
+        expected_object_init = fixed_ref_no_init["object"][0]
+        
+        # Compare results
+        np.testing.assert_allclose(
+            np.array(jax_robot_init),
+            expected_robot_init,
+            rtol=1e-5,
+            err_msg="Robot init not using first frame"
+        )
+        np.testing.assert_allclose(
+            np.array(jax_object_init),
+            expected_object_init,
+            rtol=1e-5,
+            err_msg="Object init not using first frame"
+        )
+        
+        # Compare JAX and NumPy implementations
+        np.testing.assert_allclose(
+            np.array(jax_robot_init),
+            numpy_robot_init,
+            rtol=1e-5,
+            err_msg="Robot init states don't match between implementations"
+        )
+        np.testing.assert_allclose(
+            np.array(jax_object_init),
+            numpy_object_init,
+            rtol=1e-5,
+            err_msg="Object init states don't match between implementations"
+        )
+
+    def test_missing_init_random(self):
+        """Test initialization when robot_init and object_init are missing for random reference"""
+        # Create reference data without init values
+        random_ref_no_init = {
+            "time": np.array([0.0, 1.0]),
+            "robot": np.array([
+                [1.0, 2.0, 3.0],
+                [4.0, 5.0, 6.0]
+            ]),
+            "robot_vel": np.array([
+                [0.1, 0.2, 0.3],
+                [0.4, 0.5, 0.6]
+            ]),
+            "object": np.array([
+                [7.0, 8.0, 9.0],
+                [10.0, 11.0, 12.0]
+            ])
+        }
+        
+        # Create references
+        jax_ref = JaxReferenceMotion(random_ref_no_init)
+        numpy_ref = NumpyReferenceMotion(random_ref_no_init)
+        
+        # Get initial states
+        jax_robot_init, jax_object_init = jax_ref.get_init()
+        numpy_robot_init, numpy_object_init = numpy_ref.get_init()
+        
+        # For random type, init should be mean of bounds
+        expected_robot_init = random_ref_no_init["robot"][0]
+        expected_object_init = random_ref_no_init["object"][0]
+        
+        # Compare results with expected means
+        np.testing.assert_allclose(
+            np.array(jax_robot_init),
+            expected_robot_init,
+            rtol=1e-5,
+            err_msg="Robot init not using mean of bounds"
+        )
+        np.testing.assert_allclose(
+            np.array(jax_object_init),
+            expected_object_init,
+            rtol=1e-5,
+            err_msg="Object init not using mean of bounds"
+        )
+        
+        # Compare JAX and NumPy implementations
+        np.testing.assert_allclose(
+            np.array(jax_robot_init),
+            numpy_robot_init,
+            rtol=1e-5,
+            err_msg="Robot init states don't match between implementations"
+        )
+        np.testing.assert_allclose(
+            np.array(jax_object_init),
+            numpy_object_init,
+            rtol=1e-5,
+            err_msg="Object init states don't match between implementations"
+        )
+
+    def test_missing_init_track(self):
+        """Test initialization when robot_init and object_init are missing for track reference"""
+        # Load tracking data
+        track_ref = {k: v for k, v in np.load(self.file_path).items()}
+        
+        # Remove init values if they exist
+        track_ref.pop('robot_init', None)
+        track_ref.pop('object_init', None)
+        
+        # Create references
+        jax_ref = JaxReferenceMotion(track_ref)
+        numpy_ref = NumpyReferenceMotion(track_ref)
+        
+        # Get initial states
+        jax_robot_init, jax_object_init = jax_ref.get_init()
+        numpy_robot_init, numpy_object_init = numpy_ref.get_init()
+        
+        # For track type, init should be first frame
+        expected_robot_init = track_ref["robot"][0] if "robot" in track_ref else None
+        expected_object_init = track_ref["object"][0] if "object" in track_ref else None
+        
+        # Compare results with first frame
+        if expected_robot_init is not None:
+            np.testing.assert_allclose(
+                np.array(jax_robot_init),
+                expected_robot_init,
+                rtol=1e-5,
+                err_msg="Robot init not using first frame"
+            )
+        if expected_object_init is not None:
+            np.testing.assert_allclose(
+                np.array(jax_object_init),
+                expected_object_init,
+                rtol=1e-5,
+                err_msg="Object init not using first frame"
+            )
+        
+        # Compare JAX and NumPy implementations
+        np.testing.assert_allclose(
+            np.array(jax_robot_init),
+            numpy_robot_init,
+            rtol=1e-5,
+            err_msg="Robot init states don't match between implementations"
+        )
+        if jax_object_init is not None and numpy_object_init is not None:
+            np.testing.assert_allclose(
+                np.array(jax_object_init),
+                numpy_object_init,
+                rtol=1e-5,
+                err_msg="Object init states don't match between implementations"
+            )
+
 if __name__ == '__main__':
     unittest.main()
