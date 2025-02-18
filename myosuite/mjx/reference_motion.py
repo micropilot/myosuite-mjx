@@ -35,8 +35,7 @@ class ReferenceType(enum.Enum):
 # Reference motion
 class ReferenceMotion:
     def __init__(
-        self, reference_data: Union[str, dict], 
-        motion_extrapolation: bool = False
+        self, reference_data: Union[str, dict], motion_extrapolation: bool = False
     ):
         """
         Reference Type

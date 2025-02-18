@@ -108,39 +108,64 @@ def mat2euler(mat):
 def mat2quat(mat):
     """Convert Rotation Matrix to Quaternion using JAX"""
     mat = jp.asarray(mat, dtype=jp.float32)
-    assert mat.shape[-2:] == (3, 3), f"Invalid shape matrix {mat.shape}"
+    assert mat.shape == (3, 3), f"Invalid shape matrix {mat.shape}"
 
-    Qxx, Qyx, Qzx = mat[..., 0, 0], mat[..., 0, 1], mat[..., 0, 2]
-    Qxy, Qyy, Qzy = mat[..., 1, 0], mat[..., 1, 1], mat[..., 1, 2]
-    Qxz, Qyz, Qzz = mat[..., 2, 0], mat[..., 2, 1], mat[..., 2, 2]
+    def case_1(mat):
+        trace = 1.0 + mat[0, 0] - mat[1, 1] - mat[2, 2]
+        s = 2.0 * jp.sqrt(trace)
+        s = jp.where(mat[1, 2] < mat[2, 1], -s, s)
+        q1 = 0.25 * s
+        s = 1.0 / s
+        q0 = (mat[1, 2] - mat[2, 1]) * s
+        q2 = (mat[0, 1] + mat[1, 0]) * s
+        q3 = (mat[2, 0] + mat[0, 2]) * s
+        return jp.array([q0, q1, q2, q3])
 
-    # Fill only the lower half of the symmetric matrix
-    K = jp.zeros(mat.shape[:-2] + (4, 4), dtype=jp.float32)
-    K = K.at[..., 0, 0].set(Qxx - Qyy - Qzz)
-    K = K.at[..., 1, 0].set(Qyx + Qxy)
-    K = K.at[..., 1, 1].set(Qyy - Qxx - Qzz)
-    K = K.at[..., 2, 0].set(Qzx + Qxz)
-    K = K.at[..., 2, 1].set(Qzy + Qyz)
-    K = K.at[..., 2, 2].set(Qzz - Qxx - Qyy)
-    K = K.at[..., 3, 0].set(Qyz - Qzy)
-    K = K.at[..., 3, 1].set(Qzx - Qxz)
-    K = K.at[..., 3, 2].set(Qxy - Qyx)
-    K = K.at[..., 3, 3].set(Qxx + Qyy + Qzz)
-    K /= 3.0
+    def case_2(mat):
+        trace = 1.0 - mat[0, 0] + mat[1, 1] - mat[2, 2]
+        s = 2.0 * jp.sqrt(trace)
+        s = jp.where(mat[2, 0] < mat[0, 2], -s, s)
+        q2 = 0.25 * s
+        s = 1.0 / s
+        q0 = (mat[2, 0] - mat[0, 2]) * s
+        q1 = (mat[0, 1] + mat[1, 0]) * s
+        q3 = (mat[1, 2] + mat[2, 1]) * s
+        return jp.array([q0, q1, q2, q3])
 
-    # Compute eigenvalues and eigenvectors
-    vals, vecs = jp.linalg.eigh(K)
+    def case_3(mat):
+        trace = 1.0 - mat[0, 0] - mat[1, 1] + mat[2, 2]
+        s = 2.0 * jp.sqrt(trace)
+        s = jp.where(mat[0, 1] < mat[1, 0], -s, s)
+        q3 = 0.25 * s
+        s = 1.0 / s
+        q0 = (mat[0, 1] - mat[1, 0]) * s
+        q1 = (mat[2, 0] + mat[0, 2]) * s
+        q2 = (mat[1, 2] + mat[2, 1]) * s
+        return jp.array([q0, q1, q2, q3])
 
-    # Select the largest eigenvector (corresponding to max eigenvalue)
-    max_idx = jp.argmax(vals, axis=-1)
-    q = jp.take_along_axis(vecs, max_idx[..., None, None], axis=-1)[..., 0]
+    def case_4(mat):
+        trace = 1.0 + mat[0, 0] + mat[1, 1] + mat[2, 2]
+        s = 2.0 * jp.sqrt(trace)
+        q0 = 0.25 * s
+        s = 1.0 / s
+        q1 = (mat[1, 2] - mat[2, 1]) * s
+        q2 = (mat[2, 0] - mat[0, 2]) * s
+        q3 = (mat[0, 1] - mat[1, 0]) * s
+        return jp.array([q0, q1, q2, q3])
 
-    # Reorder to [w, x, y, z]
-    q = q[..., [3, 0, 1, 2]]
+    # Conditional execution for efficiency
+    q = jax.lax.cond(
+        mat[2, 2] < 0.0,
+        lambda mat: jax.lax.cond(
+            mat[0, 0] > mat[1, 1], case_1, case_2, mat
+        ),
+        lambda mat: jax.lax.cond(
+            mat[0, 0] < -mat[1, 1], case_3, case_4, mat
+        ),
+        mat
+    )
 
-    # Ensure quaternion has positive w (flip sign if necessary)
-    q = jax.lax.cond(q[..., 0] < 0, lambda q: -q, lambda q: q, q)
-
+    q = q.at[1:].set(-q[1:])
     return q
 
 
