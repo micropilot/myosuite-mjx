@@ -176,5 +176,157 @@ class TestReferenceMotion(unittest.TestCase):
         with self.assertRaises(AssertionError):
             _ = NumpyReferenceMotion(invalid_ref)
 
+    def test_get_init_fixed(self):
+        """Test get_init for fixed reference type"""
+        jax_ref = JaxReferenceMotion(self.fixed_ref_data)
+        numpy_ref = NumpyReferenceMotion(self.fixed_ref_data)
+        
+        # Get initial states
+        jax_robot_init, jax_object_init = jax_ref.get_init()
+        numpy_robot_init, numpy_object_init = numpy_ref.get_init()
+        
+        # Compare results
+        np.testing.assert_allclose(
+            np.array(jax_robot_init),
+            numpy_robot_init,
+            rtol=1e-5,
+            err_msg="Robot init states don't match"
+        )
+        np.testing.assert_allclose(
+            np.array(jax_object_init),
+            numpy_object_init,
+            rtol=1e-5,
+            err_msg="Object init states don't match"
+        )
+
+    def test_get_init_random(self):
+        """Test get_init for random reference type"""
+        jax_ref = JaxReferenceMotion(self.random_ref_data)
+        numpy_ref = NumpyReferenceMotion(self.random_ref_data)
+        
+        # Get initial states
+        jax_robot_init, jax_object_init = jax_ref.get_init()
+        numpy_robot_init, numpy_object_init = numpy_ref.get_init()
+        
+        # For random type, init should be mean of bounds
+        expected_robot_init = np.mean(self.random_ref_data["robot"], axis=0)
+        
+        np.testing.assert_allclose(
+            np.array(jax_robot_init),
+            numpy_robot_init,
+            rtol=1e-5,
+            err_msg="Robot init states don't match"
+        )
+        np.testing.assert_allclose(
+            np.array(jax_object_init),
+            numpy_object_init,
+            rtol=1e-5,
+            err_msg="Object init states don't match"
+        )
+
+    def test_get_reference_fixed(self):
+        """Test get_reference for fixed reference type"""
+        jax_ref = JaxReferenceMotion(self.fixed_ref_data)
+        numpy_ref = NumpyReferenceMotion(self.fixed_ref_data)
+        
+        # Test at different times (should all give same result for fixed type)
+        test_times = [0.0, 0.5, 1.0]
+        
+        for time in test_times:
+            jax_ref_struct = jax_ref.get_reference(time)
+            numpy_ref_struct = numpy_ref.get_reference(time)
+            
+            # Compare results
+            np.testing.assert_allclose(
+                np.array(jax_ref_struct.robot),
+                numpy_ref_struct.robot,
+                rtol=1e-5,
+                err_msg=f"Robot refs don't match at time {time}"
+            )
+            np.testing.assert_allclose(
+                np.array(jax_ref_struct.object),
+                numpy_ref_struct.object,
+                rtol=1e-5,
+                err_msg=f"Object refs don't match at time {time}"
+            )
+
+    def test_get_reference_track(self):
+        """Test get_reference for tracking reference type"""
+        jax_ref = JaxReferenceMotion(self.file_path)
+        numpy_ref = NumpyReferenceMotion(self.file_path)
+        
+        # Test exact timestamps
+        time = jax_ref.reference["time"][1]  # Use second timestamp
+        jax_ref_struct = jax_ref.get_reference(time)
+        numpy_ref_struct = numpy_ref.get_reference(time)
+        
+        # Compare results at exact timestamp
+        np.testing.assert_allclose(
+            np.array(jax_ref_struct.robot),
+            numpy_ref_struct.robot,
+            rtol=1e-5,
+            err_msg="Robot refs don't match at exact timestamp"
+        )
+        
+        # Test interpolation
+        print ("Testing interpolation")
+        time = (jax_ref.reference["time"][1] + jax_ref.reference["time"][2]) / 2
+        jax_ref_struct = jax_ref.get_reference(time)
+        numpy_ref_struct = numpy_ref.get_reference(time)
+        
+        # Compare interpolated results
+        print ("JAX robot", jax_ref_struct.robot)
+        print ("NPY robot", numpy_ref_struct.robot)
+        np.testing.assert_allclose(
+            np.array(jax_ref_struct.robot),
+            numpy_ref_struct.robot,
+            rtol=1e-5,
+            err_msg="Robot refs don't match during interpolation"
+        )
+
+    def test_get_reference_extrapolation(self):
+        """Test get_reference with extrapolation"""
+        # Enable extrapolation
+        jax_ref = JaxReferenceMotion(self.file_path, motion_extrapolation=True)
+        numpy_ref = NumpyReferenceMotion(self.file_path, motion_extrapolation=True)
+        
+        # Test beyond final timestamp
+        max_time = jax_ref.reference["time"][-1]
+        test_time = max_time + 1.0
+        
+        jax_ref_struct = jax_ref.get_reference(test_time)
+        numpy_ref_struct = numpy_ref.get_reference(test_time)
+        
+        # Compare extrapolated results
+        np.testing.assert_allclose(
+            np.array(jax_ref_struct.robot),
+            numpy_ref_struct.robot,
+            rtol=1e-5,
+            err_msg="Robot refs don't match during extrapolation"
+        )
+        
+        # Should match final position when extrapolating
+        np.testing.assert_allclose(
+            np.array(jax_ref_struct.robot),
+            jax_ref.reference["robot"][-1],
+            rtol=1e-5,
+            err_msg="Extrapolation doesn't match final position"
+        )
+
+    def test_get_reference_error_cases(self):
+        """Test error cases in get_reference"""
+        # Without extrapolation
+        jax_ref = JaxReferenceMotion(self.file_path, motion_extrapolation=False)
+        numpy_ref = NumpyReferenceMotion(self.file_path, motion_extrapolation=False)
+        
+        # Test time beyond motion duration
+        max_time = jax_ref.reference["time"][-1]
+        test_time = max_time + 1.0
+        
+        with self.assertRaises(AssertionError):
+            _ = jax_ref.get_reference(test_time)
+        with self.assertRaises(AssertionError):
+            _ = numpy_ref.get_reference(test_time)
+
 if __name__ == '__main__':
     unittest.main()

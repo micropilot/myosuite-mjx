@@ -293,10 +293,9 @@ class ReferenceMotion:
                 print(
                     f"Direct frame reference not found at {time} sec. Attempting linear blend between two frames [{ind},{ind_next}]"
                 )
-                blend = time - self.reference["time"][ind] / (
+                blend = (time - self.reference["time"][ind]) / (
                     self.reference["time"][ind_next] - self.reference["time"][ind]
                 )
-
                 # robot motion
                 if self.robot_horizon > 1:
                     robot_ref = (1.0 - blend) ** self.reference["robot"][
