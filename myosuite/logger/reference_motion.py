@@ -197,12 +197,10 @@ class ReferenceMotion:
 
         # search locally for index
         if time == self.reference["time"][self.index_cache]:
-            # print(f"curr match: {time}")
             return (self.index_cache, self.index_cache)
 
         elif self.index_cache < (self.horizon - 1):
             if time == self.reference["time"][self.index_cache + 1]:
-                # print(f"next match: {time}")
                 self.index_cache += 1
                 return (self.index_cache, self.index_cache)
 
@@ -210,7 +208,6 @@ class ReferenceMotion:
                 time > self.reference["time"][self.index_cache]
                 and time < self.reference["time"][self.index_cache + 1]
             ):
-                # print(f"interval match: {time}")
                 return (self.index_cache, self.index_cache + 1)
             else:
                 print(
@@ -293,7 +290,7 @@ class ReferenceMotion:
                 print(
                     f"Direct frame reference not found at {time} sec. Attempting linear blend between two frames [{ind},{ind_next}]"
                 )
-                blend = (time - self.reference["time"][ind]) / (
+                blend = time - self.reference["time"][ind] / (
                     self.reference["time"][ind_next] - self.reference["time"][ind]
                 )
                 # robot motion

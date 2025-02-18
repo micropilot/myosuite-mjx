@@ -269,7 +269,7 @@ class ReferenceMotion:
                 )
             else:
                 # Linearly interpolate between frames to get references
-                blend = (time - self.reference["time"][ind]) / (
+                blend = time - self.reference["time"][ind] / (
                     self.reference["time"][ind_next] - self.reference["time"][ind]
                 )
                 # robot motion
