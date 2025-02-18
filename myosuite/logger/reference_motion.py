@@ -128,7 +128,7 @@ class ReferenceMotion:
         if reference["object_init"] is not None and reference["object"] is not None:
             assert (
                 reference["object_init"].shape[0] == reference["object"].shape[1]
-            ), "n_object_jnt different between motion and init "
+            ), f"n_object_jnt different between motion and init"
 
     def load(self, reference_data):
         """
@@ -337,10 +337,3 @@ class ReferenceMotion:
 
     def __repr__(self) -> str:
         return self.reference.__repr__()
-
-
-# ref = ReferenceMotion(reference_data="myosuite/envs/myo/myodm/data/MyoHand_airplane_fly1.npz")
-# print ('horizon:', ref.horizon)
-# robot_init, object_init = ref.get_init()
-# print ('robot_init:', robot_init)
-# print ('object_init:', object_init)
