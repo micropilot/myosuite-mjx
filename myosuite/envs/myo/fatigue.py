@@ -70,6 +70,7 @@ class CumulativeFatigue:
 
         # Calculate C(t) -- transfer rate between MR and MA
         C = np.zeros_like(self._MA)
+        print (self._MA, self.TL, self._MR)
         idxs = (self._MA < self.TL) & (self._MR > (self.TL - self._MA))
         C[idxs] = self._LD[idxs] * (self.TL[idxs] - self._MA[idxs])
         idxs = (self._MA < self.TL) & (self._MR <= (self.TL - self._MA))
