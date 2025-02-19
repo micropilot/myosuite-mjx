@@ -16,7 +16,7 @@ class CumulativeFatigue:
     Adapted from https://dl.acm.org/doi/pdf/10.1145/3313831.3376701
     Based on implementation from Aleksi Ikkala and Florian Fischer
     """
-    def __init__(self, mj_model, frame_skip=1, key=None):
+    def __init__(self, mj_model, frame_skip=1):
         # Get muscle actuator indices
         muscle_act_ind = mj_model.actuator_dyntype == mujoco.mjtDyn.mjDYN_MUSCLE
         # Convert to concrete integer value
@@ -46,8 +46,6 @@ class CumulativeFatigue:
             if muscle_act_ind[i]
         ], dtype=jp.float32)
         
-        # Static values (will be included in aux_data)
-        self.key = key
 
     def _tree_flatten(self) -> Tuple[Tuple[Any, ...], Dict]:
         """Flatten the class into children and auxiliary data"""
@@ -60,8 +58,7 @@ class CumulativeFatigue:
         
         # Static values
         aux_data = {
-            'na': self.na,
-            'key': self.key
+            'na': self.na
         }
         return (children, aux_data)
 
@@ -77,10 +74,9 @@ class CumulativeFatigue:
         
         # Restore static values
         obj.na = aux_data['na']
-        obj.key = aux_data['key']
         return obj
 
-    @jax.jit
+    # @jax.jit
     def compute_act(self, act):
         """
         Compute muscle activation considering fatigue
@@ -140,16 +136,16 @@ class CumulativeFatigue:
         
         return self.MA, self.MR, self.MF
 
-    @jax.jit
+    # @jax.jit
     def get_effort(self):
         """Calculate effort as norm of difference between actual and target activation"""
         return jp.linalg.norm(self.MA - self.TL)
 
-    def reset(self, fatigue_reset_vec=None, fatigue_reset_random=False):
+    def reset(self, fatigue_reset_vec=None, fatigue_reset_random=False, key=None):
         """Reset fatigue states"""
         if fatigue_reset_random:
             assert fatigue_reset_vec is None, "Cannot use fatigue_reset_vec if fatigue_reset_random=True"
-            self.key, key1, key2 = jrandom.split(self.key, 3)
+            key1, key2 = jrandom.split(key)
             non_fatigued_muscles = jrandom.uniform(key1, (self.na,))
             active_percentage = jrandom.uniform(key2, (self.na,))
             self.MA = non_fatigued_muscles * active_percentage
@@ -185,47 +181,3 @@ tree_util.register_pytree_node(
     CumulativeFatigue._tree_flatten,
     CumulativeFatigue._tree_unflatten
 )
-
-
-# import cProfile
-# import pstats
-# import io
-
-# def main():
-#     # Create a mock model and key for testing
-#     class MockModel:
-#         def __init__(self):
-#             self.actuator_dyntype = np.array([mujoco.mjtDyn.mjDYN_MUSCLE] * 5)
-#             self.actuator_dynprm = np.array([[0.1, 0.2]] * 5)
-#             self.opt = type('opt', (object,), {'timestep': 0.01})
-
-#     model = MockModel()
-#     key = jrandom.PRNGKey(0)
-
-#     # Initialize the CumulativeFatigue class
-#     fatigue = CumulativeFatigue(model, frame_skip=1, key=key)
-
-#     # Define a batch of test activations
-#     batch_size = 10
-#     test_acts = jp.array([[0.5, 0.6, 0.7, 0.8, 0.9]] * batch_size, dtype=jp.float32)
-
-#     # Define a batched computation using vmap
-#     def batched_compute_act(keys, acts):
-#         def single_compute(key, act):
-#             fatigue_instance = CumulativeFatigue(model, frame_skip=1, key=key)
-#             return fatigue_instance.compute_act(act)
-#         return jax.vmap(single_compute)(keys, acts)
-
-#     # Generate a batch of keys
-#     keys = jrandom.split(key, batch_size)
-
-#     # Profile the batched computation
-#     batched_compute_act(keys, test_acts)
-
-# if __name__ == '__main__':
-#     profiler = cProfile.Profile()
-#     profiler.enable()
-#     main()
-#     profiler.disable()
-#     stats = pstats.Stats(profiler).sort_stats('cumtime')
-#     stats.print_stats(10)  # Print the top 10 functions by cumulative time
