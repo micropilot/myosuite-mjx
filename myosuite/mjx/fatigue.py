@@ -2,6 +2,9 @@ import jax.numpy as jp
 import jax
 import jax.random as jrandom
 import mujoco
+from typing import Dict, Tuple, Any
+from jax import tree_util
+import numpy as np
 
 # Constants for floating-point precision
 _FLOAT_EPS = jp.finfo(jp.float32).eps
@@ -14,56 +17,70 @@ class CumulativeFatigue:
     Based on implementation from Aleksi Ikkala and Florian Fischer
     """
     def __init__(self, mj_model, frame_skip=1, key=None):
-        # Recovery time multiplier (10x factor to compensate for 0.1 below)
-        self._r = 10 * 15  
-        
-        # Fatigue coefficient (identified for elbow torque)
-        self._F = jp.array(0.00912, dtype=jp.float32)
-        
-        # Recovery coefficient (0.1 factor to get ~1% R/F ratio)
-        self._R = jp.array(0.1 * 0.00094, dtype=jp.float32)
-        
-        # Timestep including frame skip
-        self._dt = jp.array(mj_model.opt.timestep * frame_skip, dtype=jp.float32)
-        
         # Get muscle actuator indices
         muscle_act_ind = mj_model.actuator_dyntype == mujoco.mjtDyn.mjDYN_MUSCLE
-        self.na = int(jp.sum(muscle_act_ind))  # Number of muscle actuators
+        # Convert to concrete integer value
+        self.na = int(np.sum(muscle_act_ind))  # Use numpy here since we're in __init__
         
-        # Get activation/deactivation time constants for muscles
-        self._tauact = jp.array([
+        # Dynamic arrays (will be included in tree_flatten children)
+        self.MA = jp.zeros(self.na, dtype=jp.float32)  # Muscle Active
+        self.MR = jp.ones(self.na, dtype=jp.float32)   # Muscle Resting
+        self.MF = jp.zeros(self.na, dtype=jp.float32)  # Muscle Fatigue
+        self.TL = jp.zeros(self.na, dtype=jp.float32)  # Target Load
+        
+        # Parameters (will be included in tree_flatten children)
+        self.F = jp.array(0.00912, dtype=jp.float32)  # Fatigue coefficient
+        self.R = jp.array(0.1 * 0.00094, dtype=jp.float32)  # Recovery coefficient
+        self.r = jp.array(10 * 15, dtype=jp.float32)  # Recovery multiplier
+        self.dt = jp.array(mj_model.opt.timestep * frame_skip, dtype=jp.float32)
+        
+        # Get muscle parameters
+        self.tauact = jp.array([
             mj_model.actuator_dynprm[i][0]
             for i in range(len(muscle_act_ind))
             if muscle_act_ind[i]
         ], dtype=jp.float32)
-        
-        self._taudeact = jp.array([
+        self.taudeact = jp.array([
             mj_model.actuator_dynprm[i][1]
             for i in range(len(muscle_act_ind))
             if muscle_act_ind[i]
         ], dtype=jp.float32)
         
-        # Initialize state vectors
-        self._MA = jp.zeros(self.na, dtype=jp.float32)  # Muscle Active
-        self._MR = jp.ones(self.na, dtype=jp.float32)   # Muscle Resting
-        self._MF = jp.zeros(self.na, dtype=jp.float32)  # Muscle Fatigue
-        self.TL = jp.zeros(self.na, dtype=jp.float32)   # Target Load
-        
-        # Initialize RNG
+        # Static values (will be included in aux_data)
         self.key = key
 
-    def set_FatigueCoefficient(self, F):
-        """Set Fatigue coefficient"""
-        self._F = jp.array(F, dtype=jp.float32)
+    def _tree_flatten(self) -> Tuple[Tuple[Any, ...], Dict]:
+        """Flatten the class into children and auxiliary data"""
+        # Dynamic values (arrays that change during computation)
+        children = (
+            self.MA, self.MR, self.MF, self.TL,
+            self.F, self.R, self.r, self.dt,
+            self.tauact, self.taudeact
+        )
+        
+        # Static values
+        aux_data = {
+            'na': self.na,
+            'key': self.key
+        }
+        return (children, aux_data)
 
-    def set_RecoveryCoefficient(self, R):
-        """Set Recovery coefficient"""
-        self._R = jp.array(R, dtype=jp.float32)
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        """Reconstruct class from flattened data"""
+        obj = cls.__new__(cls)  # Create new instance without __init__
+        
+        # Restore dynamic values
+        obj.MA, obj.MR, obj.MF, obj.TL, \
+        obj.F, obj.R, obj.r, obj.dt, \
+        obj.tauact, obj.taudeact = children
+        
+        # Restore static values
+        obj.na = aux_data['na']
+        obj.key = aux_data['key']
+        return obj
 
-    def set_RecoveryMultiplier(self, r):
-        """Set Recovery time multiplier"""
-        self._r = jp.array(r, dtype=jp.float32)
-
+    @jax.jit
     def compute_act(self, act):
         """
         Compute muscle activation considering fatigue
@@ -72,110 +89,143 @@ class CumulativeFatigue:
             act: Target activation levels
             
         Returns:
-            tuple: Updated (MA, MR, MF) states
+            tuple: (MA, MR, MF) states
         """
         # Set target load
         self.TL = jp.array(act, dtype=jp.float32)
         
         # Calculate effective time constants
-        self._LD = 1 / self._tauact * (0.5 + 1.5 * self._MA)
-        self._LR = (0.5 + 1.5 * self._MA) / self._taudeact
+        LD = 1 / self.tauact * (0.5 + 1.5 * self.MA)
+        LR = (0.5 + 1.5 * self.MA) / self.taudeact
         
         # Calculate C(t) - transfer rate between MR and MA
-        C = jp.zeros_like(self._MA)
+        C = jp.zeros_like(self.MA)
         
         # Case 1: MA < TL and MR > (TL - MA)
-        mask1 = (self._MA < self.TL) & (self._MR > (self.TL - self._MA))
-        C = jp.where(mask1, self._LD * (self.TL - self._MA), C)
+        mask1 = (self.MA < self.TL) & (self.MR > (self.TL - self.MA))
+        C = jp.where(mask1, LD * (self.TL - self.MA), C)
         
         # Case 2: MA < TL and MR <= (TL - MA)
-        mask2 = (self._MA < self.TL) & (self._MR <= (self.TL - self._MA))
-        C = jp.where(mask2, self._LD * self._MR, C)
+        mask2 = (self.MA < self.TL) & (self.MR <= (self.TL - self.MA))
+        C = jp.where(mask2, LD * self.MR, C)
         
         # Case 3: MA >= TL
-        mask3 = self._MA >= self.TL
-        C = jp.where(mask3, self._LR * (self.TL - self._MA), C)
+        mask3 = self.MA >= self.TL
+        C = jp.where(mask3, LR * (self.TL - self.MA), C)
         
         # Calculate recovery rate
-        rR = jp.where(self._MA >= self.TL, 
-                     self._r * self._R,
-                     self._R)
+        rR = jp.where(self.MA >= self.TL, 
+                     self.r * self.R,
+                     self.R)
         
         # Clip C(t) to ensure states remain between 0 and 1
         C_min = jp.maximum(
-            -self._MA / self._dt + self._F * self._MA,
-            (self._MR - 1) / self._dt + rR * self._MF
+            -self.MA / self.dt + self.F * self.MA,
+            (self.MR - 1) / self.dt + rR * self.MF
         )
         C_max = jp.minimum(
-            (1 - self._MA) / self._dt + self._F * self._MA,
-            self._MR / self._dt + rR * self._MF
+            (1 - self.MA) / self.dt + self.F * self.MA,
+            self.MR / self.dt + rR * self.MF
         )
         C = jp.clip(C, C_min, C_max)
         
         # Update states
-        dMA = (C - self._F * self._MA) * self._dt
-        dMR = (-C + rR * self._MF) * self._dt
-        dMF = (self._F * self._MA - rR * self._MF) * self._dt
+        dMA = (C - self.F * self.MA) * self.dt
+        dMR = (-C + rR * self.MF) * self.dt
+        dMF = (self.F * self.MA - rR * self.MF) * self.dt
         
-        self._MA = self._MA + dMA
-        self._MR = self._MR + dMR
-        self._MF = self._MF + dMF
+        self.MA = self.MA + dMA
+        self.MR = self.MR + dMR
+        self.MF = self.MF + dMF
         
-        return self._MA, self._MR, self._MF
+        return self.MA, self.MR, self.MF
 
+    @jax.jit
     def get_effort(self):
         """Calculate effort as norm of difference between actual and target activation"""
-        return jp.linalg.norm(self._MA - self.TL)
+        return jp.linalg.norm(self.MA - self.TL)
 
     def reset(self, fatigue_reset_vec=None, fatigue_reset_random=False):
-        """
-        Reset fatigue states
-        
-        Args:
-            fatigue_reset_vec: Optional initial fatigue values
-            fatigue_reset_random: Whether to randomize initial states
-        """
+        """Reset fatigue states"""
         if fatigue_reset_random:
             assert fatigue_reset_vec is None, "Cannot use fatigue_reset_vec if fatigue_reset_random=True"
             self.key, key1, key2 = jrandom.split(self.key, 3)
             non_fatigued_muscles = jrandom.uniform(key1, (self.na,))
             active_percentage = jrandom.uniform(key2, (self.na,))
-            self._MA = non_fatigued_muscles * active_percentage
-            self._MR = non_fatigued_muscles * (1 - active_percentage)
-            self._MF = 1 - non_fatigued_muscles
+            self.MA = non_fatigued_muscles * active_percentage
+            self.MR = non_fatigued_muscles * (1 - active_percentage)
+            self.MF = 1 - non_fatigued_muscles
         else:
             if fatigue_reset_vec is not None:
                 assert len(fatigue_reset_vec) == self.na, \
                     f"Invalid length of fatigue vector (expected {self.na}, got {len(fatigue_reset_vec)})"
-                self._MF = jp.array(fatigue_reset_vec, dtype=jp.float32)
-                self._MR = 1 - self._MF
-                self._MA = jp.zeros(self.na, dtype=jp.float32)
+                self.MF = jp.array(fatigue_reset_vec, dtype=jp.float32)
+                self.MR = 1 - self.MF
+                self.MA = jp.zeros(self.na, dtype=jp.float32)
             else:
-                self._MA = jp.zeros(self.na, dtype=jp.float32)
-                self._MR = jp.ones(self.na, dtype=jp.float32)
-                self._MF = jp.zeros(self.na, dtype=jp.float32)
+                self.MA = jp.zeros(self.na, dtype=jp.float32)
+                self.MR = jp.ones(self.na, dtype=jp.float32)
+                self.MF = jp.zeros(self.na, dtype=jp.float32)
 
-    # Properties
-    @property
-    def MF(self):
-        return self._MF
+    def set_FatigueCoefficient(self, F):
+        """Set Fatigue coefficient"""
+        self.F = jp.array(F, dtype=jp.float32)
 
-    @property
-    def MR(self):
-        return self._MR
+    def set_RecoveryCoefficient(self, R):
+        """Set Recovery coefficient"""
+        self.R = jp.array(R, dtype=jp.float32)
 
-    @property
-    def MA(self):
-        return self._MA
+    def set_RecoveryMultiplier(self, r):
+        """Set Recovery time multiplier"""
+        self.r = jp.array(r, dtype=jp.float32)
 
-    @property
-    def F(self):
-        return self._F
+# Register the class as a PyTree
+tree_util.register_pytree_node(
+    CumulativeFatigue,
+    CumulativeFatigue._tree_flatten,
+    CumulativeFatigue._tree_unflatten
+)
 
-    @property
-    def R(self):
-        return self._R
 
-    @property
-    def r(self):
-        return self._r
+# import cProfile
+# import pstats
+# import io
+
+# def main():
+#     # Create a mock model and key for testing
+#     class MockModel:
+#         def __init__(self):
+#             self.actuator_dyntype = np.array([mujoco.mjtDyn.mjDYN_MUSCLE] * 5)
+#             self.actuator_dynprm = np.array([[0.1, 0.2]] * 5)
+#             self.opt = type('opt', (object,), {'timestep': 0.01})
+
+#     model = MockModel()
+#     key = jrandom.PRNGKey(0)
+
+#     # Initialize the CumulativeFatigue class
+#     fatigue = CumulativeFatigue(model, frame_skip=1, key=key)
+
+#     # Define a batch of test activations
+#     batch_size = 10
+#     test_acts = jp.array([[0.5, 0.6, 0.7, 0.8, 0.9]] * batch_size, dtype=jp.float32)
+
+#     # Define a batched computation using vmap
+#     def batched_compute_act(keys, acts):
+#         def single_compute(key, act):
+#             fatigue_instance = CumulativeFatigue(model, frame_skip=1, key=key)
+#             return fatigue_instance.compute_act(act)
+#         return jax.vmap(single_compute)(keys, acts)
+
+#     # Generate a batch of keys
+#     keys = jrandom.split(key, batch_size)
+
+#     # Profile the batched computation
+#     batched_compute_act(keys, test_acts)
+
+# if __name__ == '__main__':
+#     profiler = cProfile.Profile()
+#     profiler.enable()
+#     main()
+#     profiler.disable()
+#     stats = pstats.Stats(profiler).sort_stats('cumtime')
+#     stats.print_stats(10)  # Print the top 10 functions by cumulative time
