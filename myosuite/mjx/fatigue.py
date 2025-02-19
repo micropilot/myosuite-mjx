@@ -2,13 +2,20 @@ import jax.numpy as jp
 import jax
 import jax.random as jrandom
 import mujoco
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, NamedTuple
 from jax import tree_util
 import numpy as np
 
 # Constants for floating-point precision
 _FLOAT_EPS = jp.finfo(jp.float32).eps
 _EPS4 = _FLOAT_EPS * 4.0
+
+class FatigueState(NamedTuple):
+    """Container for fatigue state"""
+    MA: jp.ndarray  # Muscle Active
+    MR: jp.ndarray  # Muscle Resting
+    MF: jp.ndarray  # Muscle Fatigue
+    TL: jp.ndarray  # Target Load
 
 class CumulativeFatigue:
     """
@@ -22,16 +29,10 @@ class CumulativeFatigue:
         # Convert to concrete integer value
         self.na = int(np.sum(muscle_act_ind))  # Use numpy here since we're in __init__
         
-        # Dynamic arrays (will be included in tree_flatten children)
-        self.MA = jp.zeros(self.na, dtype=jp.float32)  # Muscle Active
-        self.MR = jp.ones(self.na, dtype=jp.float32)   # Muscle Resting
-        self.MF = jp.zeros(self.na, dtype=jp.float32)  # Muscle Fatigue
-        self.TL = jp.zeros(self.na, dtype=jp.float32)  # Target Load
-        
-        # Parameters (will be included in tree_flatten children)
-        self.F = jp.array(0.00912, dtype=jp.float32)  # Fatigue coefficient
-        self.R = jp.array(0.1 * 0.00094, dtype=jp.float32)  # Recovery coefficient
-        self.r = jp.array(10 * 15, dtype=jp.float32)  # Recovery multiplier
+        # Parameters (static)
+        self.F = jp.array(0.00912, dtype=jp.float32)
+        self.R = jp.array(0.1 * 0.00094, dtype=jp.float32)
+        self.r = jp.array(10 * 15, dtype=jp.float32)
         self.dt = jp.array(mj_model.opt.timestep * frame_skip, dtype=jp.float32)
         
         # Get muscle parameters
@@ -46,12 +47,19 @@ class CumulativeFatigue:
             if muscle_act_ind[i]
         ], dtype=jp.float32)
         
+        # Initial state
+        self.state = FatigueState(
+            MA=jp.zeros(self.na, dtype=jp.float32),
+            MR=jp.ones(self.na, dtype=jp.float32),
+            MF=jp.zeros(self.na, dtype=jp.float32),
+            TL=jp.zeros(self.na, dtype=jp.float32)
+        )
 
     def _tree_flatten(self) -> Tuple[Tuple[Any, ...], Dict]:
         """Flatten the class into children and auxiliary data"""
         # Dynamic values (arrays that change during computation)
         children = (
-            self.MA, self.MR, self.MF, self.TL,
+            self.state.MA, self.state.MR, self.state.MF, self.state.TL,
             self.F, self.R, self.r, self.dt,
             self.tauact, self.taudeact
         )
@@ -68,15 +76,16 @@ class CumulativeFatigue:
         obj = cls.__new__(cls)  # Create new instance without __init__
         
         # Restore dynamic values
-        obj.MA, obj.MR, obj.MF, obj.TL, \
-        obj.F, obj.R, obj.r, obj.dt, \
-        obj.tauact, obj.taudeact = children
+        MA, MR, MF, TL, F, R, r, dt, tauact, taudeact = children
         
         # Restore static values
         obj.na = aux_data['na']
+        obj.F, obj.R, obj.r, obj.dt = F, R, r, dt
+        obj.tauact, obj.taudeact = tauact, taudeact
+        obj.state = FatigueState(MA=MA, MR=MR, MF=MF, TL=TL)
         return obj
 
-    # @jax.jit
+    @jax.jit
     def compute_act(self, act):
         """
         Compute muscle activation considering fatigue
@@ -87,81 +96,94 @@ class CumulativeFatigue:
         Returns:
             tuple: (MA, MR, MF) states
         """
-        # Set target load
-        self.TL = jp.array(act, dtype=jp.float32)
+        # Update target load
+        state = self.state._replace(TL=jp.array(act, dtype=jp.float32))
         
         # Calculate effective time constants
-        LD = 1 / self.tauact * (0.5 + 1.5 * self.MA)
-        LR = (0.5 + 1.5 * self.MA) / self.taudeact
+        LD = 1 / self.tauact * (0.5 + 1.5 * state.MA)
+        LR = (0.5 + 1.5 * state.MA) / self.taudeact
         
         # Calculate C(t) - transfer rate between MR and MA
-        C = jp.zeros_like(self.MA)
+        C = jp.zeros_like(state.MA)
         
         # Case 1: MA < TL and MR > (TL - MA)
-        mask1 = (self.MA < self.TL) & (self.MR > (self.TL - self.MA))
-        C = jp.where(mask1, LD * (self.TL - self.MA), C)
+        mask1 = (state.MA < state.TL) & (state.MR > (state.TL - state.MA))
+        C = jp.where(mask1, LD * (state.TL - state.MA), C)
         
         # Case 2: MA < TL and MR <= (TL - MA)
-        mask2 = (self.MA < self.TL) & (self.MR <= (self.TL - self.MA))
-        C = jp.where(mask2, LD * self.MR, C)
+        mask2 = (state.MA < state.TL) & (state.MR <= (state.TL - state.MA))
+        C = jp.where(mask2, LD * state.MR, C)
         
         # Case 3: MA >= TL
-        mask3 = self.MA >= self.TL
-        C = jp.where(mask3, LR * (self.TL - self.MA), C)
+        mask3 = state.MA >= state.TL
+        C = jp.where(mask3, LR * (state.TL - state.MA), C)
         
         # Calculate recovery rate
-        rR = jp.where(self.MA >= self.TL, 
+        rR = jp.where(state.MA >= state.TL, 
                      self.r * self.R,
                      self.R)
         
         # Clip C(t) to ensure states remain between 0 and 1
         C_min = jp.maximum(
-            -self.MA / self.dt + self.F * self.MA,
-            (self.MR - 1) / self.dt + rR * self.MF
+            -state.MA / self.dt + self.F * state.MA,
+            (state.MR - 1) / self.dt + rR * state.MF
         )
         C_max = jp.minimum(
-            (1 - self.MA) / self.dt + self.F * self.MA,
-            self.MR / self.dt + rR * self.MF
+            (1 - state.MA) / self.dt + self.F * state.MA,
+            state.MR / self.dt + rR * state.MF
         )
         C = jp.clip(C, C_min, C_max)
         
         # Update states
-        dMA = (C - self.F * self.MA) * self.dt
-        dMR = (-C + rR * self.MF) * self.dt
-        dMF = (self.F * self.MA - rR * self.MF) * self.dt
+        dMA = (C - self.F * state.MA) * self.dt
+        dMR = (-C + rR * state.MF) * self.dt
+        dMF = (self.F * state.MA - rR * state.MF) * self.dt
         
-        self.MA = self.MA + dMA
-        self.MR = self.MR + dMR
-        self.MF = self.MF + dMF
+        # Create new state
+        self.state = FatigueState(
+            MA=state.MA + dMA,
+            MR=state.MR + dMR,
+            MF=state.MF + dMF,
+            TL=state.TL
+        )
         
-        return self.MA, self.MR, self.MF
+        return self.state.MA, self.state.MR, self.state.MF
 
-    # @jax.jit
+    @jax.jit
     def get_effort(self):
         """Calculate effort as norm of difference between actual and target activation"""
-        return jp.linalg.norm(self.MA - self.TL)
+        return jp.linalg.norm(self.state.MA - self.state.TL)
 
     def reset(self, fatigue_reset_vec=None, fatigue_reset_random=False, key=None):
         """Reset fatigue states"""
         if fatigue_reset_random:
-            assert fatigue_reset_vec is None, "Cannot use fatigue_reset_vec if fatigue_reset_random=True"
+            assert key is not None, "Key required for random reset"
             key1, key2 = jrandom.split(key)
             non_fatigued_muscles = jrandom.uniform(key1, (self.na,))
             active_percentage = jrandom.uniform(key2, (self.na,))
-            self.MA = non_fatigued_muscles * active_percentage
-            self.MR = non_fatigued_muscles * (1 - active_percentage)
-            self.MF = 1 - non_fatigued_muscles
+            self.state = FatigueState(
+                MA=non_fatigued_muscles * active_percentage,
+                MR=non_fatigued_muscles * (1 - active_percentage),
+                MF=1 - non_fatigued_muscles,
+                TL=jp.zeros(self.na, dtype=jp.float32)
+            )
         else:
             if fatigue_reset_vec is not None:
                 assert len(fatigue_reset_vec) == self.na, \
                     f"Invalid length of fatigue vector (expected {self.na}, got {len(fatigue_reset_vec)})"
-                self.MF = jp.array(fatigue_reset_vec, dtype=jp.float32)
-                self.MR = 1 - self.MF
-                self.MA = jp.zeros(self.na, dtype=jp.float32)
+                self.state = FatigueState(
+                    MA=jp.zeros(self.na, dtype=jp.float32),
+                    MR=1 - jp.array(fatigue_reset_vec, dtype=jp.float32),
+                    MF=jp.array(fatigue_reset_vec, dtype=jp.float32),
+                    TL=jp.zeros(self.na, dtype=jp.float32)
+                )
             else:
-                self.MA = jp.zeros(self.na, dtype=jp.float32)
-                self.MR = jp.ones(self.na, dtype=jp.float32)
-                self.MF = jp.zeros(self.na, dtype=jp.float32)
+                self.state = FatigueState(
+                    MA=jp.zeros(self.na, dtype=jp.float32),
+                    MR=jp.ones(self.na, dtype=jp.float32),
+                    MF=jp.zeros(self.na, dtype=jp.float32),
+                    TL=jp.zeros(self.na, dtype=jp.float32)
+                )
 
     def set_FatigueCoefficient(self, F):
         """Set Fatigue coefficient"""
