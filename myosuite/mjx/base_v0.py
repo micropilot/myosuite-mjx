@@ -80,11 +80,7 @@ class BaseV0(PipelineEnv):
             self.EPLpos = mujoco.mj_name2id(self.sys.model, mujoco.mjtObj.mjOBJ_ACTUATOR, "EPL")
             self.EIPpos = mujoco.mj_name2id(self.sys.model, mujoco.mjtObj.mjOBJ_ACTUATOR, "EIP")
 
-    def compute_reward(self, data: base.State, info: dict) -> dict:
-        # implemented in task subclass
-        raise NotImplementedError
-    
-    def get_info(self, state: base.State, data: base.State) -> dict:
+    def compute_reward(self, data: base.State) -> dict:
         # implemented in task subclass
         raise NotImplementedError
     
@@ -126,19 +122,18 @@ class BaseV0(PipelineEnv):
         pipeline_state = self.pipeline_step(pipeline_state, action)
         obs = self._get_obs(pipeline_state, action)
 
-        log_info = self.get_info(state, pipeline_state)
-        reward, terminated = self.compute_reward(pipeline_state, log_info)
+        reward, done, metrics = self.compute_reward(pipeline_state)
 
         state.metrics.update(
             reward=reward
         )
-        state.info.update(**log_info)
+        state.metrics.update(**metrics)
 
         return state.replace(
             pipeline_state=pipeline_state, 
             obs=obs, 
             reward=reward, 
-            done=terminated
+            done=done
         )
     
     def reset(self, fatigue_reset: bool = True, rng: jax.Array = None) -> State:
@@ -160,18 +155,15 @@ class BaseV0(PipelineEnv):
             qvel
         )
 
-        obs = self._get_obs(data.data, jp.zeros(self.sys.act_size()))
+        obs = self.get_obs(data.data, jp.zeros(self.sys.act_size()))
+        metrics = {k: zero for k in self.weighted_reward_keys.keys()}
         state = State(
             data,
             obs,
             reward,
             done,
-            {
-                'reward': zero
-            }
+            metrics
         )
-        info = self.get_info(state, data)
-        state.info.update(**info)
         return state
         
     def get_obs(self, pipeline_state: base.State, action: jax.Array) -> jax.Array:
