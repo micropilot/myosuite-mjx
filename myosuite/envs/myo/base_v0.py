@@ -13,6 +13,13 @@ from myosuite.envs.myo.fatigue import CumulativeFatigue
 
 
 class BaseV0(env_base.MujocoEnv):
+
+    MYO_CREDIT = """\
+    MyoSuite: A contact-rich simulation suite for musculoskeletal motor control
+        Vittorio Caggiano, Huawei Wang, Guillaume Durandau, Massimo Sartori, Vikash Kumar
+        L4DC-2019 | https://sites.google.com/view/myosuite
+    """
+    
     def _setup(
         self,
         obs_keys: list,
