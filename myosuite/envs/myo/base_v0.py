@@ -107,6 +107,7 @@ class BaseV0(env_base.MujocoEnv):
             muscle_a[self.EPLpos] = muscle_a[self.EIPpos].copy()
             # Set EIP to 0
             muscle_a[self.EIPpos] = 0
+
         # step forward
         self.last_ctrl = self.robot.step(
             ctrl_desired=muscle_a,

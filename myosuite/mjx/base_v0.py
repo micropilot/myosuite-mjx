@@ -21,12 +21,13 @@ class BaseV0(PipelineEnv):
             muscle_condition="",
             fatigue_reset_vec=None,
             fatigue_reset_random=False,
+            normalize_act=True,
             **kwargs
         ):
 
         sys = mjcf.load(model_path)
 
-        n_frames = 5
+        n_frames = 10
         sys = sys.tree_replace({
             'opt.solver': mujoco.mjtSolver.mjSOL_NEWTON,
             'opt.disableflags': mujoco.mjtDisableBit.mjDSBL_EULERDAMP,
@@ -42,19 +43,25 @@ class BaseV0(PipelineEnv):
             obs_keys = obs_keys.copy()
             obs_keys.append("act")
 
-        # ids
-        self.tip_sids = []
-        self.target_sids = []
+        # Initialize as empty lists
+        tip_sids_list = []
+        target_sids_list = []
+        
         if sites:
             for site in sites:
-                self.tip_sids.append(mujoco.mj_name2id(self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site))
-                self.target_sids.append(mujoco.mj_name2id(self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"))
-
+                tip_sids_list.append(mujoco.mj_name2id(self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site))
+                target_sids_list.append(mujoco.mj_name2id(self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"))
+        
+        # Convert lists to JAX arrays
+        self.tip_sids = jp.array(tip_sids_list)
+        self.target_sids = jp.array(target_sids_list)
+        
         self.muscle_condition = muscle_condition
         self.fatigue_reset_vec = fatigue_reset_vec
         self.fatigue_reset_random = fatigue_reset_random
         self.frame_skip = frame_skip
         self.weighted_reward_keys = weighted_reward_keys
+        self.normalize_act = normalize_act
         self.initializeConditions()
         
         # TODO: setup viewer later
@@ -87,24 +94,17 @@ class BaseV0(PipelineEnv):
     # step the simulation forward
     def step(self, state: State, action: jax.Array) -> State:
         """Runs one timestep of the environment's dynamics."""
-        muscle_act_ind = self.sys.model.actuator_dyntype == mujoco.mjtDyn.mjDYN_MUSCLE
+        muscle_act_ind = self.sys.mj_model.actuator_dyntype == mujoco.mjtDyn.mjDYN_MUSCLE
         
         # Explicitely project normalized space (-1,1) to actuator space (0,1) if muscles
-        if self.sys.model.na and self.normalize_act:
-            # find muscle actuators
-            action[muscle_act_ind] = 1.0 / (
-                1.0 + jp.exp(-5.0 * (action[muscle_act_ind] - 0.5))
+        if self.sys.na and self.normalize_act:
+            # Use .at[] to perform the assignment on the JAX array
+            action = action.at[muscle_act_ind].set(
+                1.0 / (1.0 + jp.exp(-5.0 * (action[muscle_act_ind] - 0.5)))
             )
-            # TODO: actuator space may not always be (0,1) for muscle or (-1, 1) for others
-            isNormalized = (
-                False  # refuse internal reprojection as we explicitly did it here
-            )
-        else:
-            isNormalized = self.normalize_act  # accept requested reprojection
 
         # implement abnormalities
         if self.muscle_condition == "fatigue":
-            # import ipdb; ipdb.set_trace()
             action[muscle_act_ind], _, _ = self.muscle_fatigue.compute_act(
                 action[muscle_act_ind]
             )
@@ -114,13 +114,8 @@ class BaseV0(PipelineEnv):
             # Set EIP to 0
             action[self.EIPpos] = 0
         
-        # step forward
-        action_min = self.sys.actuator.ctrl_range[:, 0]
-        action_max = self.sys.actuator.ctrl_range[:, 1]
-        action = jp.clip(action, action_min, action_max)
-        
-        pipeline_state = self.pipeline_step(pipeline_state, action)
-        obs = self._get_obs(pipeline_state, action)
+        pipeline_state = self.pipeline_step(state.pipeline_state, action)
+        obs = self.get_obs(pipeline_state, action)
 
         reward, done, metrics = self.compute_reward(pipeline_state)
 
@@ -136,7 +131,7 @@ class BaseV0(PipelineEnv):
             done=done
         )
     
-    def reset(self, fatigue_reset: bool = True, rng: jax.Array = None) -> State:
+    def reset(self, rng: jax.Array = None, fatigue_reset: bool = True) -> State:
         if fatigue_reset:
             if self.muscle_condition == "fatigue":
                 self.muscle_fatigue.reset(
@@ -146,7 +141,7 @@ class BaseV0(PipelineEnv):
             else:
                 pass 
         
-        qpos = self.sys.init_q
+        qpos = self.sys.qpos0
         qvel = jp.zeros(qpos.shape)
 
         reward, done, zero = jp.zeros(3)
@@ -155,7 +150,7 @@ class BaseV0(PipelineEnv):
             qvel
         )
 
-        obs = self.get_obs(data.data, jp.zeros(self.sys.act_size()))
+        obs = self.get_obs(data, jp.zeros(self.sys.act_size()))
         metrics = {k: zero for k in self.weighted_reward_keys.keys()}
         state = State(
             data,
