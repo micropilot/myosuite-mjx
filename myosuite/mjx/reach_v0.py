@@ -33,11 +33,16 @@ class ReachEnvV0(BaseV0):
         )
 
         self.target_reach_range = target_reach_range
+        self.iftip_min = target_reach_range["IFtip"][0]
+        self.iftip_max = target_reach_range["IFtip"][1]
         self.far_th = far_th
 
-    def reset(self, rng: jax.Array = None):
+    def reset(self, rng: jax.Array = None) -> State:
+        super().reset(rng)
         key, subkey = jax.random.split(rng)
-        state = super().reset(subkey)
+
+        qpos = self.sys.qpos0
+        qvel = jp.zeros(qpos.shape)
 
         info = {}
         for site, span in self.target_reach_range.items():
@@ -52,13 +57,38 @@ class ReachEnvV0(BaseV0):
             )
             info[site] = target_pos
 
-        state.info.update(**info)
+        reward, done, zero = jp.zeros(3)
+        data = self.pipeline_init(qpos, qvel)
+
+        obs = self.get_obs(data, jp.zeros(self.sys.act_size()), info)
+        metrics = {k: jp.array(zero)for k in self.weighted_reward_keys.keys()}
+        metrics['reward'] = reward
+        
+        state = State(
+            pipeline_state=data, 
+            obs=obs, 
+            reward=reward, 
+            done=done, 
+            metrics=metrics,
+            info=info
+        )
 
         return state
 
-    def compute_reward(self, pipeline_state: State) -> dict:
+
+    def compute_reward(self, pipeline_state: base.State, info: dict) -> dict:
         tip_pos = pipeline_state.site_xpos[self.tip_sids]
-        target_pos = pipeline_state.site_xpos[self.target_sids]
+        # Initialize an empty list to store target positions
+        target_pos_list = []
+
+        # Iterate over the keys in target_reach_range
+        for site in self.target_reach_range.keys():
+            # Check if the site is in info and append its value to the list
+            if site in info:
+                target_pos_list.append(info[site])
+
+        # Concatenate all the target positions into a single vector
+        target_pos = jp.concatenate(target_pos_list) 
 
         reach_dist = jp.linalg.norm(tip_pos - target_pos)
 
@@ -87,11 +117,28 @@ class ReachEnvV0(BaseV0):
 
         return reward, done, metrics
 
-    def get_obs(self, pipeline_state: base.State, action: jax.Array) -> jax.Array:
+    def get_obs(
+            self, 
+            pipeline_state: base.State, 
+            action: jax.Array,
+            info: dict
+        ) -> jax.Array:
+
         position = pipeline_state.qpos
         velocity = pipeline_state.qvel * pipeline_state.time
         tip_pos = pipeline_state.site_xpos[self.tip_sids]
-        target_pos = pipeline_state.site_xpos[self.target_sids]
+
+        # Initialize an empty list to store target positions
+        target_pos_list = []
+
+        # Iterate over the keys in target_reach_range
+        for site in self.target_reach_range.keys():
+            # Check if the site is in info and append its value to the list
+            if site in info:
+                target_pos_list.append(info[site])
+
+        # Concatenate all the target positions into a single vector
+        target_pos = jp.concatenate(target_pos_list)
 
         reach_err = target_pos - tip_pos
 

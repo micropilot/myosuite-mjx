@@ -146,13 +146,16 @@ class TestReachV0(unittest.TestCase):
         mujoco_reward_dict = mujoco_env.get_reward_dict(
             mujoco_env.get_obs_dict(mujoco_env.sim)
         )
-        jax_reward, _, jax_metrics = jax_env.compute_reward(jax_state.pipeline_state)
+        jax_reward, _, jax_metrics = jax_env.compute_reward(
+            jax_state.pipeline_state,
+            jax_state.info
+        )
 
         # Compare reward components
         for key in ["reach", "bonus", "penalty"]:
             np.testing.assert_allclose(
                 mujoco_reward_dict[key],
-                float(jax_metrics[key][0]),
+                float(jax_metrics[key]),
                 rtol=1e-5,
                 err_msg=f"Reward component {key} mismatch",
             )
@@ -186,13 +189,16 @@ class TestReachV0(unittest.TestCase):
         # Verify observation components
         mujoco_obs_dict = mujoco_env.get_obs_dict(mujoco_env.sim)
         jax_obs = jax_env.get_obs(
-            jax_state.pipeline_state, jp.zeros(jax_env.sys.act_size())
+            jax_state.pipeline_state, 
+            jp.zeros(jax_env.sys.act_size()),
+            jax_state.info
         )
 
         # Compare each observation component
         start_idx = 0
         for key in mujoco_env.DEFAULT_OBS_KEYS:
             if key in mujoco_obs_dict:
+                print (key)
                 component_size = mujoco_obs_dict[key].size
                 np.testing.assert_allclose(
                     mujoco_obs_dict[key],

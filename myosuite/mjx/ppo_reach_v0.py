@@ -20,12 +20,6 @@ target_reach_range = {
 
 envs.register_environment('reach_v0', ReachEnvV0)
 
-
-env = ReachEnvV0(
-    model_path=model_path,
-    target_reach_range=target_reach_range,
-)
-
 env_name = 'reach_v0'
 env = envs.get_environment(env_name, 
                            model_path=model_path,
@@ -43,10 +37,10 @@ def progress(num_steps, metrics):
 
 train_fn = functools.partial(
     ppo.train,
-    num_timesteps=2_000_000,
-    num_evals=24,
+    num_timesteps=2_000,
+    num_evals=10,
     reward_scaling=5,
-    episode_length=100,
+    episode_length=10,
     normalize_observations=True,
     action_repeat=4,
     unroll_length=50,
@@ -55,8 +49,8 @@ train_fn = functools.partial(
     discounting=0.95,
     learning_rate=3e-4,
     entropy_cost=1e-3,
-    num_envs=128,
-    batch_size=256,
+    num_envs=8,
+    batch_size=32,
     max_devices_per_host=8,
     seed=1,
 )
