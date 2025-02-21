@@ -37,23 +37,22 @@ class ReachEnvV0(BaseV0):
 
     def reset(self, rng: jax.Array = None):
         key, subkey = jax.random.split(rng)
-        new_site_pos = (
-            self.sys.site_pos.copy()
-        )  # Assuming site_pos is a mutable type like a list or numpy array
+        state = super().reset(subkey)
+
+        info = {}
         for site, span in self.target_reach_range.items():
             sid = mujoco.mj_name2id(
-                self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
+                        self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
+                    )
+            target_pos = jax.random.uniform(
+                key, 
+                shape=span[0].shape, 
+                minval=self.target_reach_range[site][0], 
+                maxval=self.target_reach_range[site][1]
             )
-            new_site_pos = new_site_pos.at[sid].set(
-                jax.random.uniform(
-                    subkey, shape=span[0].shape, minval=span[0], maxval=span[1]
-                )
-            )
+            info[site] = target_pos
 
-        # Create a new instance of the dataclass with the updated site_pos
-        self.sys = replace(self.sys, site_pos=new_site_pos)
-
-        state = super().reset(subkey)
+        state.info.update(**info)
 
         return state
 
@@ -61,17 +60,19 @@ class ReachEnvV0(BaseV0):
         tip_pos = pipeline_state.site_xpos[self.tip_sids]
         target_pos = pipeline_state.site_xpos[self.target_sids]
 
-        reach_dist = jp.linalg.norm(tip_pos - target_pos, axis=-1)
+        reach_dist = jp.linalg.norm(tip_pos - target_pos)
 
-        far_th = (
-            self.far_th * len(self.tip_sids)
-            if jp.squeeze(pipeline_state.time) > 2 * self.dt
-            else jp.inf
+        far_th = jax.lax.cond(
+            jp.squeeze(pipeline_state.time) > 2 * self.dt,
+            lambda _: self.far_th * len(self.tip_sids),
+            lambda _: jp.inf,
+            operand=None
         )
 
         near_th = len(self.tip_sids) * 0.0125
 
-        done = jp.logical_or(reach_dist > far_th, reach_dist < near_th)
+        # Convert boolean to float: 1.0 for True, 0.0 for False
+        done = jp.where(jp.logical_or(reach_dist > far_th, reach_dist < near_th), 1.0, 0.0)
 
         metrics = {
             "reach": -1.0 * reach_dist,

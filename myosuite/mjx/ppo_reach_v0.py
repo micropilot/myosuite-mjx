@@ -6,29 +6,30 @@ import functools
 from datetime import datetime
 from jax import numpy as jp
 
+from brax import envs
 from brax.training.agents.ppo import train as ppo
 
-from myosuite.mjx.myodm_v0 import TrackEnv
+from myosuite.mjx.reach_v0 import ReachEnvV0
 
 
-dof_robot = 29
-model_path = "/../envs/myo/assets/hand/myohand_object.xml"
-object_name = "airplane"
-reference = {
-    "time": jp.array((0.0, 4.0)),
-    "robot": jp.zeros((2, dof_robot)),
-    "robot_vel": jp.zeros((2, dof_robot)),
-    "object_init": jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
-    "object": jp.array(
-        [[-0.2, -0.2, 0.1, 1.0, 0.0, 0.0, -1.0], [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0]]
-    ),
-}
+model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
+target_reach_range = {
+            "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]]),
+        }
 
-env = TrackEnv(
+
+envs.register_environment('reach_v0', ReachEnvV0)
+
+
+env = ReachEnvV0(
     model_path=model_path,
-    object_name=object_name,
-    reference=reference,
+    target_reach_range=target_reach_range,
 )
+
+env_name = 'reach_v0'
+env = envs.get_environment(env_name, 
+                           model_path=model_path,
+                           target_reach_range=target_reach_range)
 
 
 times = [datetime.now()]
@@ -43,9 +44,9 @@ def progress(num_steps, metrics):
 train_fn = functools.partial(
     ppo.train,
     num_timesteps=2_000_000,
-    num_evals=20,
+    num_evals=24,
     reward_scaling=5,
-    episode_length=1000,
+    episode_length=100,
     normalize_observations=True,
     action_repeat=4,
     unroll_length=50,

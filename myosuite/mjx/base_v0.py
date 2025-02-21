@@ -130,12 +130,17 @@ class BaseV0(PipelineEnv):
         obs = self.get_obs(pipeline_state, action)
 
         reward, done, metrics = self.compute_reward(pipeline_state)
+        metrics['reward'] = reward
 
-        state.metrics.update(reward=reward)
         state.metrics.update(**metrics)
 
         return state.replace(
-            pipeline_state=pipeline_state, obs=obs, reward=reward, done=done
+            pipeline_state=pipeline_state, 
+            obs=obs, 
+            reward=reward, 
+            done=done,
+            metrics=metrics,
+            info=state.info
         )
 
     def reset(self, rng: jax.Array = None, fatigue_reset: bool = True) -> State:
@@ -155,8 +160,18 @@ class BaseV0(PipelineEnv):
         data = self.pipeline_init(qpos, qvel)
 
         obs = self.get_obs(data, jp.zeros(self.sys.act_size()))
-        metrics = {k: zero for k in self.weighted_reward_keys.keys()}
-        state = State(data, obs, reward, done, metrics)
+        metrics = {k: jp.array(zero)for k in self.weighted_reward_keys.keys()}
+        metrics['reward'] = reward
+        
+        state = State(
+            pipeline_state=data, 
+            obs=obs, 
+            reward=reward, 
+            done=done, 
+            metrics=metrics,
+            info={}
+        )
+
         return state
 
     def get_obs(self, pipeline_state: base.State, action: jax.Array) -> jax.Array:
