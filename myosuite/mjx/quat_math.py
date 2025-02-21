@@ -156,13 +156,9 @@ def mat2quat(mat):
     # Conditional execution for efficiency
     q = jax.lax.cond(
         mat[2, 2] < 0.0,
-        lambda mat: jax.lax.cond(
-            mat[0, 0] > mat[1, 1], case_1, case_2, mat
-        ),
-        lambda mat: jax.lax.cond(
-            mat[0, 0] < -mat[1, 1], case_3, case_4, mat
-        ),
-        mat
+        lambda mat: jax.lax.cond(mat[0, 0] > mat[1, 1], case_1, case_2, mat),
+        lambda mat: jax.lax.cond(mat[0, 0] < -mat[1, 1], case_3, case_4, mat),
+        mat,
     )
 
     q = q.at[1:].set(-q[1:])

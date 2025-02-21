@@ -2,7 +2,9 @@ import numpy as np
 import unittest
 
 
-def dict_numpify(data: dict, u_res=np.uint8, i_res=np.int8, f_res=np.float16) -> dict:  # noqa: C901
+def dict_numpify(  # noqa: C901
+    data: dict, u_res=np.uint8, i_res=np.int8, f_res=np.float16
+) -> dict:
     """
     Convert all data to numpy using specified resolution
     data:   Input dict

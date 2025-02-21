@@ -21,8 +21,10 @@ def read(fname):
 
 def fetch_requirements():
     reqs = []
-    for req_file in ['base', 'dev', 'jaxrl']:
-        with open(f"requirements/{req_file}.txt", "r", encoding="utf-8", errors="ignore") as f:
+    for req_file in ["base", "dev", "jaxrl"]:
+        with open(
+            f"requirements/{req_file}.txt", "r", encoding="utf-8", errors="ignore"
+        ) as f:
             reqs.append(f.read().strip().split("\n"))
     return reqs
 

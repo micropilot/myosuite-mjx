@@ -199,7 +199,9 @@ def plot(paths, env=None, fileName_prefix=""):  # noqa: C901
 
 
 # Render frames/videos
-def render(rollout_path, render_format: str = "mp4", cam_names: list = ["left"]):  # noqa: C901
+def render(  # noqa: C901
+    rollout_path, render_format: str = "mp4", cam_names: list = ["left"]
+):
     """
     Render the frames from a given rollout.
 

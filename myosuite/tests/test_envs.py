@@ -174,9 +174,7 @@ class TestEnvs(unittest.TestCase):
             env.env.get_env_infos()
 
             # test step (everything together)
-            env.env.step(
-                np.zeros(env.env.sim.model.nu)
-            )
+            env.env.step(np.zeros(env.env.sim.model.nu))
             del env
 
 
