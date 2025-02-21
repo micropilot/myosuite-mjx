@@ -31,8 +31,11 @@ times = [datetime.now()]
 
 def progress(num_steps, metrics):
     times.append(datetime.now())
-    print(f"time_spent: {times[-2] - times[-1]}")
-    print(metrics)
+    print(f"Time spent: {times[-1] - times[-2]}")
+    print(f"Progress at step {num_steps}:")
+    print("Metrics:")
+    for key, value in metrics.items():
+        print(f"  {key}: {value}")
 
 
 train_fn = functools.partial(
