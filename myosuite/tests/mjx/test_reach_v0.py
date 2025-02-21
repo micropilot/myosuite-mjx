@@ -198,7 +198,6 @@ class TestReachV0(unittest.TestCase):
         start_idx = 0
         for key in mujoco_env.DEFAULT_OBS_KEYS:
             if key in mujoco_obs_dict:
-                print (key)
                 component_size = mujoco_obs_dict[key].size
                 np.testing.assert_allclose(
                     mujoco_obs_dict[key],

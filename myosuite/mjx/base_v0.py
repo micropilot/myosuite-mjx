@@ -108,7 +108,6 @@ class BaseV0(PipelineEnv):
     # step the simulation forward
     def step(self, state: State, action: jax.Array) -> State:
         """Runs one timestep of the environment's dynamics."""
-        print ("Step", state.pipeline_state.time)
         muscle_act_ind = (
             self.sys.mj_model.actuator_dyntype == mujoco.mjtDyn.mjDYN_MUSCLE
         )
