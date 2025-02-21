@@ -259,11 +259,13 @@ class ReferenceMotion:
                     else self.reference["robot"][0]
                 )
                 robot_vel_ref = (
-                    None if self.reference["robot_vel"] is None
+                    None
+                    if self.reference["robot_vel"] is None
                     else self.reference["robot_vel"][ind]
                 )
                 object_ref = (
-                    None if self.reference["object"] is None
+                    None
+                    if self.reference["object"] is None
                     else self.reference["object"][ind]
                 )
             else:
@@ -273,15 +275,20 @@ class ReferenceMotion:
                 )
                 # robot motion
                 if self.robot_horizon > 1:
-                    robot_ref = (1.0 - blend) ** self.reference["robot"][ind] + blend * self.reference["robot"][ind_next]
+                    robot_ref = (1.0 - blend) ** self.reference["robot"][
+                        ind
+                    ] + blend * self.reference["robot"][ind_next]
                     robot_vel_ref = (
-                        None if self.reference["robot_vel"] is None
-                        else (1.0 - blend) ** self.reference["robot_vel"][ind] + blend * self.reference["robot_vel"][ind_next]
+                        None
+                        if self.reference["robot_vel"] is None
+                        else (1.0 - blend) ** self.reference["robot_vel"][ind]
+                        + blend * self.reference["robot_vel"][ind_next]
                     )
                 else:
                     robot_ref = self.reference["robot"][0]
                     robot_vel_ref = (
-                        None if self.reference["robot_vel"] is None
+                        None
+                        if self.reference["robot_vel"] is None
                         else self.reference["robot_vel"][0]
                     )
 
@@ -289,10 +296,12 @@ class ReferenceMotion:
                 if self.reference["object"] is None:
                     object_ref = None
                 elif self.object_horizon > 1:
-                    object_ref = (1.0 - blend) * self.reference["object"][ind] + blend * self.reference["object"][ind_next]
+                    object_ref = (1.0 - blend) * self.reference["object"][
+                        ind
+                    ] + blend * self.reference["object"][ind_next]
                 else:
                     object_ref = self.reference["object"][0]
-            
+
         return ReferenceStruct(
             time=time,
             robot=robot_ref,

@@ -257,8 +257,8 @@ class ChaseTagField(HeightField):
         Fill patch at position <i> ,<j> with terrain <type>
         """
         self.hfield.data[
-            i * self.patch_size: i * self.patch_size + self.patch_size,
-            j * self.patch_size: j * self.patch_size + self.patch_size,
+            i * self.patch_size : i * self.patch_size + self.patch_size,
+            j * self.patch_size : j * self.patch_size + self.patch_size,
         ] = self._compute_patch_data(terrain_type)
 
     def sample(self, rng=None):
@@ -394,7 +394,9 @@ class TrackField(HeightField):
             patch_starts = np.arange(0, self.nrow, int(self.nrow // n_patches))
 
             def terrain_function(patch_start, patch_end, i):
-                return terrain_fn_list[self.rng.choice(n_types)][0](patch_start, patch_end, i)
+                return terrain_fn_list[self.rng.choice(n_types)][0](
+                    patch_start, patch_end, i
+                )
 
             terrain_fn = terrain_function
             self.terrain_type = TrackTypes.MIXED
@@ -422,7 +424,7 @@ class TrackField(HeightField):
             else:
                 height -= stair_height
         stair_parts = np.concatenate(stair_parts, axis=0)
-        self.hfield.data[patch_start: patch_start + stair_parts.shape[0]] = stair_parts
+        self.hfield.data[patch_start : patch_start + stair_parts.shape[0]] = stair_parts
 
     def _compute_hilly_track(self, patch_start, patch_end, i):
         """

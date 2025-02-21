@@ -102,7 +102,9 @@ def plot_paths(paths, env=None, fileName_prefix=""):
         nplt2 = 3
         ax = plt.subplot(nplt2, 2, 2)
         ax.set_prop_cycle(None)
-        plt.plot(path["env_infos"]["time"], path["actions"], "-", label="act")  # plot normalized actions
+        plt.plot(
+            path["env_infos"]["time"], path["actions"], "-", label="act"
+        )  # plot normalized actions
         plt.ylabel("actions")
         ax.axes.xaxis.set_ticklabels([])
         ax.yaxis.tick_right()

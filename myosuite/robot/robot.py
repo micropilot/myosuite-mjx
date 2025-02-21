@@ -1025,9 +1025,7 @@ class Robot:
                     type=Prompt.ERROR,
                 )
         else:
-            prompt(
-                "Trying to close a non-existent robot", flush=True, type=Prompt.WARN
-            )
+            prompt("Trying to close a non-existent robot", flush=True, type=Prompt.WARN)
 
 
 def demo_robot():
