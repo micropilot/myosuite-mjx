@@ -42,7 +42,8 @@ model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
 # time to train: 0:00:52.407653
 
 target_reach_range = {
-            "IFtip": ((0.1, -0.1, 0.1), (0.27, 0.1, 0.3)),
+            "IFtip": jp.array([[0.1, -0.1, 0.1], 
+                               [0.27, 0.1, 0.3]]),
         }
 
 envs.register_environment('reach_v0', ReachEnvV0)
