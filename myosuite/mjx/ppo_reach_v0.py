@@ -13,10 +13,13 @@ from myosuite.mjx.reach_v0 import ReachEnvV0
 
 
 model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
-target_reach_range = {
-            "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]]),
-        }
+# target_reach_range = {
+        #     "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]]),
+        # }
 
+target_reach_range = {
+            "IFtip": ((0.1, -0.1, 0.1), (0.27, 0.1, 0.3)),
+        }
 
 envs.register_environment('reach_v0', ReachEnvV0)
 
