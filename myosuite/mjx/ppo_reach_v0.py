@@ -42,7 +42,7 @@ train_fn = functools.partial(
     ppo.train,
     num_timesteps=2_000_000, 
     num_evals=20, 
-    reward_scaling=10, 
+    reward_scaling=1, 
     episode_length=1000, 
     normalize_observations=True, 
     action_repeat=1, 
