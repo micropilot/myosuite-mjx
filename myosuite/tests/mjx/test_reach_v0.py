@@ -38,6 +38,55 @@ class TestReachV0(unittest.TestCase):
         self.assertEqual(len(mujoco_env.target_sids), len(jax_env.target_sids))
         self.assertEqual(mujoco_env.far_th, jax_env.far_th)
 
+    def test_reset_same_min_max(self):
+        """Test reset behavior when min and max are the same"""
+        target_reach_range = {"IFtip": ((0.2, 0.05, 0.20), (0.2, 0.05, 0.20))}
+        target_reach_range_jax = {
+            "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]])
+        }
+
+        jax_env = JaxReachEnv(
+            model_path=self.model_path,
+            target_reach_range=target_reach_range_jax,
+        )
+
+        key = jax.random.PRNGKey(0)
+        jax_state = jax_env.reset(rng=key)
+
+        # Check that the sampled position is equal to the min (and max)
+        np.testing.assert_allclose(
+            jax_state.info["IFtip"],
+            np.array([0.2, 0.05, 0.20]), 
+            rtol=1e-7,  # Relative tolerance
+            atol=1e-9,  # Absolute tolerance
+            err_msg="Sampled position does not match expected value when min and max are the same",
+        )
+
+    def test_reset_different_min_max(self):
+        """Test reset behavior when min and max are different"""
+        target_reach_range = {"IFtip": ((0.1, -0.1, 0.1), (0.27, 0.1, 0.3))}
+        target_reach_range_jax = {
+            "IFtip": jp.array([[0.1, -0.1, 0.1], [0.27, 0.1, 0.3]])
+        }
+
+        jax_env = JaxReachEnv(
+            model_path=self.model_path,
+            target_reach_range=target_reach_range_jax,
+        )
+
+        key = jax.random.PRNGKey(0)
+        jax_state = jax_env.reset(rng=key)
+
+        # Check that the sampled position is within the specified range
+        sampled_pos = jax_state.info["IFtip"]
+        min_pos = np.array([0.1, -0.1, 0.1])
+        max_pos = np.array([0.27, 0.1, 0.3])
+
+        self.assertTrue(
+            np.all(sampled_pos >= min_pos) and np.all(sampled_pos <= max_pos),
+            "Sampled position is not within the specified range",
+        )
+
     def test_reset(self):
         """Test reset behavior"""
         mujoco_env = MujocoReachEnv(
