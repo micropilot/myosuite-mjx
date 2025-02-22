@@ -17,6 +17,30 @@ model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
         #     "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]]),
         # }
 
+# Time spent: 0:00:01.639262
+# Progress at step 3112960:
+# Metrics:
+#   eval/walltime: 29.420922994613647
+#   training/sps: 160742.83952329747
+#   training/walltime: 40.617655515670776
+#   training/entropy_loss: -0.001987969968467951
+#   training/policy_loss: -0.02683013305068016
+#   training/total_loss: 5.092004776000977
+#   training/v_loss: 5.120822906494141
+#   eval/episode_bonus: 23.578125
+#   eval/episode_penalty: 0.0
+#   eval/episode_reach: -0.9515132904052734
+#   eval/episode_reward: 93.36099243164062
+#   eval/episode_bonus_std: 2.306950569152832
+#   eval/episode_penalty_std: 0.0
+#   eval/episode_reach_std: 0.044229600578546524
+#   eval/episode_reward_std: 9.247026443481445
+#   eval/avg_episode_length: 32.0
+#   eval/epoch_eval_time: 0.2388324737548828
+#   eval/sps: 17150.09661627415
+# time to jit: 0:00:39.146235
+# time to train: 0:00:52.407653
+
 target_reach_range = {
             "IFtip": ((0.1, -0.1, 0.1), (0.27, 0.1, 0.3)),
         }
