@@ -46,6 +46,30 @@ target_reach_range = {
                                [0.27, 0.1, 0.3]]),
         }
 
+# Time spent: 0:00:01.640582
+# Progress at step 3112960:
+# Metrics:
+#   eval/walltime: 29.46644616127014
+#   training/sps: 160473.73912263726
+#   training/walltime: 40.617698431015015
+#   training/entropy_loss: -0.018133267760276794
+#   training/policy_loss: -0.005264163948595524
+#   training/total_loss: 5.5074462890625
+#   training/v_loss: 5.530843734741211
+#   eval/episode_bonus: 3.6171875
+#   eval/episode_penalty: -0.0078125
+#   eval/episode_reach: -1.3423044681549072
+#   eval/episode_reward: 12.735820770263672
+#   eval/episode_bonus_std: 4.274051666259766
+#   eval/episode_penalty_std: 0.08804240077733994
+#   eval/episode_reach_std: 0.7186224460601807
+#   eval/episode_reward_std: 18.09778594970703
+#   eval/avg_episode_length: 25.375
+#   eval/epoch_eval_time: 0.23965048789978027
+#   eval/sps: 17091.55710842079
+# time to jit: 0:00:39.094683
+# time to train: 0:00:52.380446
+
 envs.register_environment('reach_v0', ReachEnvV0)
 
 env_name = 'reach_v0'
