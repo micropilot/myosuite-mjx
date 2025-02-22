@@ -40,20 +40,20 @@ def progress(num_steps, metrics):
 
 train_fn = functools.partial(
     ppo.train,
-    num_timesteps=20_000_000, 
-    num_evals=5, 
-    reward_scaling=0.1,
+    num_timesteps=2_000_000, 
+    num_evals=20, 
+    reward_scaling=10, 
     episode_length=1000, 
     normalize_observations=True, 
-    action_repeat=1,
-    unroll_length=10, 
-    num_minibatches=1, 
-    num_updates_per_batch=8,
+    action_repeat=1, 
+    unroll_length=5, 
+    num_minibatches=32, 
+    num_updates_per_batch=4, 
     discounting=0.97, 
     learning_rate=3e-4, 
-    entropy_cost=1e-3, 
-    num_envs=10,
-    batch_size=10, 
+    entropy_cost=1e-2, 
+    num_envs=2048, 
+    batch_size=1024, 
     seed=1
 )
 
