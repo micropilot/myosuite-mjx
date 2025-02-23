@@ -97,7 +97,11 @@ class BaseV0(PipelineEnv):
                 self.sys.model, mujoco.mjtObj.mjOBJ_ACTUATOR, "EIP"
             )
 
-    def compute_reward(self, data: base.State) -> dict:
+    def compute_reward(
+            self, 
+            pipeline_state: base.State,
+            info: dict
+        ) -> dict:
         # implemented in task subclass
         raise NotImplementedError
 
@@ -127,18 +131,28 @@ class BaseV0(PipelineEnv):
             action[self.EIPpos] = 0
 
         pipeline_state = self.pipeline_step(state.pipeline_state, action)
-        obs = self.get_obs(pipeline_state, action)
+        obs = self.get_obs(pipeline_state, action, state.info)
 
-        reward, done, metrics = self.compute_reward(pipeline_state)
+        reward, done, metrics = self.compute_reward(pipeline_state, state.info)
+        metrics['reward'] = reward
 
-        state.metrics.update(reward=reward)
         state.metrics.update(**metrics)
 
         return state.replace(
-            pipeline_state=pipeline_state, obs=obs, reward=reward, done=done
+            pipeline_state=pipeline_state, 
+            obs=obs, 
+            reward=reward, 
+            done=done,
+            metrics=metrics,
+            info=state.info
         )
 
-    def reset(self, rng: jax.Array = None, fatigue_reset: bool = True) -> State:
+    def reset(
+            self, 
+            rng: jax.Array = None, 
+            fatigue_reset: bool = True, 
+            info: dict = {}
+        ) -> State:
         if fatigue_reset:
             if self.muscle_condition == "fatigue":
                 self.muscle_fatigue.reset(
@@ -148,16 +162,11 @@ class BaseV0(PipelineEnv):
             else:
                 pass
 
-        qpos = self.sys.qpos0
-        qvel = jp.zeros(qpos.shape)
 
-        reward, done, zero = jp.zeros(3)
-        data = self.pipeline_init(qpos, qvel)
-
-        obs = self.get_obs(data, jp.zeros(self.sys.act_size()))
-        metrics = {k: zero for k in self.weighted_reward_keys.keys()}
-        state = State(data, obs, reward, done, metrics)
-        return state
-
-    def get_obs(self, pipeline_state: base.State, action: jax.Array) -> jax.Array:
+    def get_obs(
+            self, 
+            pipeline_state: base.State, 
+            action: jax.Array, 
+            info: dict
+        )-> jax.Array:
         raise NotImplementedError

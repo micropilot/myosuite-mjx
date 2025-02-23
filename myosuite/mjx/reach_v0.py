@@ -33,45 +33,76 @@ class ReachEnvV0(BaseV0):
         )
 
         self.target_reach_range = target_reach_range
+        self.iftip_min = target_reach_range["IFtip"][0]
+        self.iftip_max = target_reach_range["IFtip"][1]
         self.far_th = far_th
 
-    def reset(self, rng: jax.Array = None):
+    def reset(self, rng: jax.Array = None) -> State:
+        super().reset(rng)
         key, subkey = jax.random.split(rng)
-        new_site_pos = (
-            self.sys.site_pos.copy()
-        )  # Assuming site_pos is a mutable type like a list or numpy array
+
+        qpos = self.sys.qpos0
+        qvel = jp.zeros(qpos.shape)
+
+        info = {}
         for site, span in self.target_reach_range.items():
             sid = mujoco.mj_name2id(
-                self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
+                        self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
+                    )
+            target_pos = jax.random.uniform(
+                key, 
+                shape=span[0].shape, 
+                minval=self.target_reach_range[site][0], 
+                maxval=self.target_reach_range[site][1]
             )
-            new_site_pos = new_site_pos.at[sid].set(
-                jax.random.uniform(
-                    subkey, shape=span[0].shape, minval=span[0], maxval=span[1]
-                )
-            )
+            info[site] = target_pos
 
-        # Create a new instance of the dataclass with the updated site_pos
-        self.sys = replace(self.sys, site_pos=new_site_pos)
+        reward, done, zero = jp.zeros(3)
+        data = self.pipeline_init(qpos, qvel)
 
-        state = super().reset(subkey)
+        obs = self.get_obs(data, jp.zeros(self.sys.act_size()), info)
+        metrics = {k: jp.array(zero)for k in self.weighted_reward_keys.keys()}
+        metrics['reward'] = reward
+        
+        state = State(
+            pipeline_state=data, 
+            obs=obs, 
+            reward=reward, 
+            done=done, 
+            metrics=metrics,
+            info=info
+        )
 
         return state
 
-    def compute_reward(self, pipeline_state: State) -> dict:
+
+    def compute_reward(self, pipeline_state: base.State, info: dict) -> dict:
         tip_pos = pipeline_state.site_xpos[self.tip_sids]
-        target_pos = pipeline_state.site_xpos[self.target_sids]
+        # Initialize an empty list to store target positions
+        target_pos_list = []
 
-        reach_dist = jp.linalg.norm(tip_pos - target_pos, axis=-1)
+        # Iterate over the keys in target_reach_range
+        for site in self.target_reach_range.keys():
+            # Check if the site is in info and append its value to the list
+            if site in info:
+                target_pos_list.append(info[site])
 
-        far_th = (
-            self.far_th * len(self.tip_sids)
-            if jp.squeeze(pipeline_state.time) > 2 * self.dt
-            else jp.inf
+        # Concatenate all the target positions into a single vector
+        target_pos = jp.concatenate(target_pos_list) 
+
+        reach_dist = jp.linalg.norm(tip_pos - target_pos)
+
+        far_th = jax.lax.cond(
+            jp.squeeze(pipeline_state.time) > 2 * self.dt,
+            lambda _: self.far_th * len(self.tip_sids),
+            lambda _: jp.inf,
+            operand=None
         )
 
         near_th = len(self.tip_sids) * 0.0125
 
-        done = jp.logical_or(reach_dist > far_th, reach_dist < near_th)
+        # Convert boolean to float: 1.0 for True, 0.0 for False
+        done = jp.where(jp.logical_or(reach_dist > far_th, reach_dist < near_th), 1.0, 0.0)
 
         metrics = {
             "reach": -1.0 * reach_dist,
@@ -86,11 +117,28 @@ class ReachEnvV0(BaseV0):
 
         return reward, done, metrics
 
-    def get_obs(self, pipeline_state: base.State, action: jax.Array) -> jax.Array:
+    def get_obs(
+            self, 
+            pipeline_state: base.State, 
+            action: jax.Array,
+            info: dict
+        ) -> jax.Array:
+
         position = pipeline_state.qpos
         velocity = pipeline_state.qvel * pipeline_state.time
         tip_pos = pipeline_state.site_xpos[self.tip_sids]
-        target_pos = pipeline_state.site_xpos[self.target_sids]
+
+        # Initialize an empty list to store target positions
+        target_pos_list = []
+
+        # Iterate over the keys in target_reach_range
+        for site in self.target_reach_range.keys():
+            # Check if the site is in info and append its value to the list
+            if site in info:
+                target_pos_list.append(info[site])
+
+        # Concatenate all the target positions into a single vector
+        target_pos = jp.concatenate(target_pos_list)
 
         reach_err = target_pos - tip_pos
 
