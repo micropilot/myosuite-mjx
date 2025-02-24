@@ -109,7 +109,6 @@ class TrackEnv(BaseV0):
         Termimate_pose_fail=False,
         **kwargs
     ):
-
         # prep reference
         self.ref = ReferenceMotion(
             reference_data=reference,
@@ -184,7 +183,9 @@ class TrackEnv(BaseV0):
             q1 = euler2quat(q1)
             q2 = euler2quat(q2)
 
-        return np.abs(quatDiff2Vel(q2, q1, 1)[0])
+        result = np.abs(quatDiff2Vel(q2, q1, 1)[0])
+
+        return result
 
     def update_reference_insim(self, curr_ref):
         if curr_ref.object is not None:
@@ -193,7 +194,9 @@ class TrackEnv(BaseV0):
             self.sim.forward()
 
     def norm2(self, x):
-        return np.sum(np.square(x))
+        result = np.sum(np.square(x))
+
+        return result
 
     def get_obs_dict(self, sim):
         obs_dict = {}
@@ -248,6 +251,7 @@ class TrackEnv(BaseV0):
         if sim.model.na > 0:
             obs_dict["act"] = sim.data.act[:].copy()
         # self.sim.model.body_names --> body names
+
         return obs_dict
 
     def get_reward_dict(self, obs_dict):
@@ -308,6 +312,7 @@ class TrackEnv(BaseV0):
         )
 
         # print(rwd_dict['dense'], obj_com_err,rwd_dict['done'],rwd_dict['sparse'])
+
         return rwd_dict
 
     def qpos_from_robot_object(self, qpos, robot, object):
@@ -322,7 +327,9 @@ class TrackEnv(BaseV0):
         self.qpos_from_robot_object(self.sim.data.qpos, ref_mot.robot, ref_mot.object)
         self.sim.forward()
         self.sim.data.time = self.sim.data.time + 0.02  # self.env.env.dt
-        return idxs[0] < self.ref.horizon - 1
+        result = idxs[0] < self.ref.horizon - 1
+
+        return result
 
     def reset(self, **kwargs):
         # print("Reset")
@@ -334,7 +341,6 @@ class TrackEnv(BaseV0):
         return obs
 
     def check_termination(self, obs_dict):
-
         obj_term, qpos_term, base_term = False, False, False
         if self.TermObj:  # termination on object
             # object too far from reference
@@ -357,6 +363,8 @@ class TrackEnv(BaseV0):
                 else False
             )
 
-        return (
+        result = (
             obj_term or qpos_term or base_term
         )  # combining termination for object + posture
+
+        return result

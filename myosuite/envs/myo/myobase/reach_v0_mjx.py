@@ -5,7 +5,7 @@ from brax import base
 from brax.envs.base import State
 from dataclasses import replace
 
-from myosuite.mjx.base_v0 import BaseV0
+from myosuite.envs.myo.base_v0_mjx import BaseV0
 
 
 class ReachEnvV0(BaseV0):
@@ -74,7 +74,6 @@ class ReachEnvV0(BaseV0):
         )
 
         return state
-
 
     def compute_reward(self, pipeline_state: base.State, info: dict) -> dict:
         tip_pos = pipeline_state.site_xpos[self.tip_sids]

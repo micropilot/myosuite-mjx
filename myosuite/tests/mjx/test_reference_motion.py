@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import glob
 
-from myosuite.mjx.reference_motion import ReferenceMotion as JaxReferenceMotion
+from myosuite.logger.reference_motion_jax import ReferenceMotion as JaxReferenceMotion
 from myosuite.logger.reference_motion import ReferenceMotion as NumpyReferenceMotion
 from myosuite.logger.reference_motion import ReferenceType
 

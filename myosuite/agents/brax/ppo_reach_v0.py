@@ -9,7 +9,7 @@ from jax import numpy as jp
 from brax import envs
 from brax.training.agents.ppo import train as ppo
 
-from myosuite.mjx.reach_v0 import ReachEnvV0
+from myosuite.envs.myo.myobase.reach_v0_mjx import ReachEnvV0
 
 
 model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"

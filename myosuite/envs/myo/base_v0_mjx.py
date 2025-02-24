@@ -1,14 +1,14 @@
 from brax import base
 from brax.envs.base import PipelineEnv, State
-from brax.io import mjcf
 import jax
 from jax import numpy as jp
 import mujoco
 
-from myosuite.mjx.fatigue import CumulativeFatigue
+from myosuite.envs.env_base_mjx import EnvBaseMJX
+from myosuite.envs.myo.fatigue_jax import CumulativeFatigue
 
 
-class BaseV0(PipelineEnv):
+class BaseV0(EnvBaseMJX):
     def __init__(
         self,
         model_path: str,
@@ -21,23 +21,13 @@ class BaseV0(PipelineEnv):
         fatigue_reset_random=False,
         normalize_act=True,
         **kwargs
-    ):
-
-        sys = mjcf.load(model_path)
-
-        n_frames = 10
-        sys = sys.tree_replace(
-            {
-                "opt.solver": mujoco.mjtSolver.mjSOL_NEWTON,
-                "opt.disableflags": mujoco.mjtDisableBit.mjDSBL_EULERDAMP,
-                "opt.iterations": 1,
-                "opt.ls_iterations": 4,
-            }
+    ):  
+        super().__init__(
+            model_path=model_path,
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+            frame_skip=frame_skip,
         )
-
-        kwargs["n_frames"] = kwargs.get("n_frames", n_frames)
-
-        super().__init__(sys=sys, backend="mjx", **kwargs)
 
         if self.sys.na > 0 and "act" not in obs_keys:
             obs_keys = obs_keys.copy()

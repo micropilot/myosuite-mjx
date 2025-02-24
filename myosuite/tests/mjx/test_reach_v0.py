@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jp
 
 from myosuite.envs.myo.myobase.reach_v0 import ReachEnvV0 as MujocoReachEnv
-from myosuite.mjx.reach_v0 import ReachEnvV0 as JaxReachEnv
+from myosuite.envs.myo.myobase.reach_v0_mjx import ReachEnvV0 as JaxReachEnv
 
 # Configure JAX to use CPU for consistent testing
 jax.config.update("jax_platform_name", "cpu")
