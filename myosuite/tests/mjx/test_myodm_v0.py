@@ -84,6 +84,7 @@ class TestTrackEnv(unittest.TestCase):
 
         # mujoco_obs = mujoco_env.reset()
         jax_state = jax_env.reset(rng=key)
+        assert False
 
         # Compare observations
         # np.testing.assert_allclose(
