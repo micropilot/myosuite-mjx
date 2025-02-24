@@ -7,7 +7,7 @@ from myosuite.envs.myo.myodm.myodm_v0 import TrackEnv as MujocoTrackEnv
 from myosuite.envs.myo.myodm.myodm_v0_mjx import TrackEnv as JaxTrackEnv
 
 # Configure JAX to use CPU for consistent testing
-jax.config.update("jax_platform_name", "cpu")
+jax.config.update("jax_platform_name", "cuda")
 
 
 class TestTrackEnv(unittest.TestCase):
