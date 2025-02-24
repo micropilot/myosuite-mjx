@@ -347,3 +347,39 @@ class TrackEnv(BaseV0):
         info["obj_com_err"] = info["curr_obj_com"] - info["targ_obj_com"]
 
         return info
+    
+
+jax.config.update("jax_platform_name", "cuda")
+
+model_path = "/../assets/hand/myohand_object_mjx.xml"
+object_name = "airplane"
+reference = {
+            "time": (0.0, 4.0),
+            "robot": jp.zeros((2, 29)),
+            "robot_vel": jp.zeros((2, 29)),
+            "object_init": jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
+            "object": jp.array(
+                [
+                    [-0.2, -0.2, 0.1, 1.0, 0.0, 0.0, -1.0],
+                    [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0],
+                ]
+            ),
+        }
+obs_keys = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"]
+weighted_reward_keys = {
+            "pose": 0.0,
+            "object": 1.0,
+            "bonus": 1.0,
+            "penalty": -2,
+        }
+
+jax_env = TrackEnv(
+            model_path=model_path,
+            object_name=object_name,
+            reference=reference,
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+        )
+
+key = jax.random.PRNGKey(0)
+jax_state = jax_env.reset(rng=key)
