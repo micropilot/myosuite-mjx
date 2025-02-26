@@ -199,6 +199,7 @@ class TrackEnv(BaseV0):
         return result
 
     def get_obs_dict(self, sim):
+        print ("get obs dict")
         obs_dict = {}
 
         # get reference for current time (returns a named tuple)

@@ -2,12 +2,13 @@ import unittest
 import numpy as np
 import jax
 import jax.numpy as jp
+import time 
 
 from myosuite.envs.myo.myodm.myodm_v0 import TrackEnv as MujocoTrackEnv
 from myosuite.envs.myo.myodm.myodm_v0_mjx import TrackEnv as JaxTrackEnv
 
 # Configure JAX to use CPU for consistent testing
-jax.config.update("jax_platform_name", "cuda")
+jax.config.update("jax_platform_name", "cpu")
 
 
 class TestTrackEnv(unittest.TestCase):
@@ -38,13 +39,13 @@ class TestTrackEnv(unittest.TestCase):
 
     def test_initialization(self):
         """Test that both implementations initialize similarly"""
-        # mujoco_env = MujocoTrackEnv(
-        #     model_path=self.model_path,
-        #     object_name=self.object_name,
-        #     reference=self.reference,
-        #     obs_keys=self.obs_keys,
-        #     weighted_reward_keys=self.weighted_reward_keys,
-        # )
+        mujoco_env = MujocoTrackEnv(
+            model_path=self.model_path,
+            object_name=self.object_name,
+            reference=self.reference,
+            obs_keys=self.obs_keys,
+            weighted_reward_keys=self.weighted_reward_keys,
+        )
 
         jax_env = JaxTrackEnv(
             model_path=self.model_path,
@@ -55,20 +56,21 @@ class TestTrackEnv(unittest.TestCase):
         )
 
         # Compare relevant attributes
-        # self.assertEqual(mujoco_env.frame_skip, jax_env.frame_skip)
-        # self.assertEqual(mujoco_env.object_name, jax_env.object_name)
-        # self.assertEqual(mujoco_env.lift_bonus_thresh, jax_env.lift_bonus_thresh)
-        # self.assertEqual(mujoco_env.obj_err_scale, jax_env.obj_err_scale)
+        self.assertEqual(mujoco_env.frame_skip, jax_env.frame_skip)
+        self.assertEqual(mujoco_env.object_name, jax_env.object_name)
+        self.assertEqual(mujoco_env.lift_bonus_thresh, jax_env.lift_bonus_thresh)
+        self.assertEqual(mujoco_env.obj_err_scale, jax_env.obj_err_scale)
 
     def test_reset(self):
         """Test reset behavior"""
-        # mujoco_env = MujocoTrackEnv(
-        #     model_path=self.model_path,
-        #     object_name=self.object_name,
-        #     reference=self.reference,
-        #     obs_keys=self.obs_keys,
-        #     weighted_reward_keys=self.weighted_reward_keys,
-        # )
+        mujoco_env = MujocoTrackEnv(
+            model_path=self.model_path,
+            object_name=self.object_name,
+            reference=self.reference,
+            obs_keys=self.obs_keys,
+            weighted_reward_keys=self.weighted_reward_keys,
+        )
+        print ("Is it doing it before this?")
 
         jax_env = JaxTrackEnv(
             model_path=self.model_path,
@@ -80,19 +82,44 @@ class TestTrackEnv(unittest.TestCase):
 
         # Reset with same RNG seed
         key = jax.random.PRNGKey(0)
-        # mujoco_env.seed(0)
+        mujoco_env.seed(0)
 
-        # mujoco_obs = mujoco_env.reset()
-        jax_state = jax_env.reset(rng=key)
-        assert False
+        jit_reset = jax.jit(jax_env.reset)
 
-        # Compare observations
-        # np.testing.assert_allclose(
-        #     mujoco_obs,
-        #     np.array(jax_state.obs),
-        #     rtol=1e-5,
-        #     err_msg="Observation mismatch after reset",
-        # )
+        mujoco_obs = mujoco_env.reset()
+        jax_state = jit_reset(rng=key)
+
+        # Compare position
+        np.testing.assert_allclose(
+            mujoco_obs[0][:35],
+            np.array(jax_state.obs[:35]),
+            rtol=1e-5,
+            err_msg="Position mismatch after reset",
+        )
+
+        # Compare velocity
+        np.testing.assert_allclose(
+            mujoco_obs[0][35:70],
+            np.array(jax_state.obs[35:70]),
+            rtol=1e-5,
+            err_msg="Velocity mismatch after reset",
+        )
+
+        # Compare hand qpos error
+        np.testing.assert_allclose(
+            mujoco_obs[0][70:99],
+            np.array(jax_state.obs[70:99]),
+            rtol=1e-5,
+            err_msg="Hand Qpos Err mismatch after reset",
+        )
+
+        # Compare hand qvel error
+        np.testing.assert_allclose(
+            mujoco_obs[0][99:128],
+            np.array(jax_state.obs[99:128]),
+            rtol=1e-5,
+            err_msg="Hand Qvel Err mismatch after reset",
+        )
 
     # def test_step(self):
     #     """Test stepping behavior"""

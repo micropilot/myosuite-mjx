@@ -42,7 +42,7 @@ class TrackEnv(BaseV0):
             weighted_reward_keys=weighted_reward_keys,
             **kwargs 
         )
-        os.remove(processed_model_path)
+        # os.remove(processed_model_path)
 
         self._load_reference_motion(
             object_name,
@@ -80,24 +80,17 @@ class TrackEnv(BaseV0):
         terminate_obj_fail,
         terminate_pose_fail,
     ):
-        start_time = time.time()
         self.ref = ReferenceMotion(
             reference_data=reference,
             motion_extrapolation=motion_extrapolation,
         )
-        end_time = time.time()
-        print(f"ReferenceMotion initialization: {end_time - start_time:.6f} seconds")
 
-        start_time = time.time()
         self.motion_start_time = motion_start_time
         self.target_sid = mujoco.mj_name2id(
             self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, "target"
         )
-        end_time = time.time()
-        print(f"Target site ID retrieval: {end_time - start_time:.6f} seconds")
 
         ##########################################
-        start_time = time.time()
         self.lift_bonus_thresh = 0.02
         # PRE-GRASP
         self.obj_err_scale = 50
@@ -120,11 +113,8 @@ class TrackEnv(BaseV0):
         # TERMINATIONS FOR MIMIC
         self.qpos_fail_thresh = 0.75
         self.TermPose = terminate_pose_fail
-        end_time = time.time()
-        print(f"Parameter initialization: {end_time - start_time:.6f} seconds")
         ##########################################
 
-        start_time = time.time()
         self.object_bid = mujoco.mj_name2id(
             self.sys.mj_model, mujoco.mjtObj.mjOBJ_BODY, object_name
         )
@@ -133,29 +123,17 @@ class TrackEnv(BaseV0):
             mujoco.mjtObj.mjOBJ_BODY, 
             "lunate"
         )
-        end_time = time.time()
-        print(f"Body ID retrieval: {end_time - start_time:.6f} seconds")
 
-        start_time = time.time()
         # Disable body skeleton rendering by setting transparency
         self.sys.mj_model.geom_rgba[self.object_bid, 3] = 0.0  # Make all geoms invisible
-        end_time = time.time()
-        print(f"Disable rendering: {end_time - start_time:.6f} seconds")
 
-        start_time = time.time()
         ipos = self.sys.mj_model.body_ipos[self.object_bid]
         pos = self.sys.mj_model.body_pos[self.object_bid]
         self.lift_z = (ipos + pos)[2] + self.lift_bonus_thresh
-        end_time = time.time()
-        print(f"Lift Z calculation: {end_time - start_time:.6f} seconds")
 
-        start_time = time.time()
         if not motion_extrapolation:
             self.spec.max_episode_steps = self.ref.horizon
-        end_time = time.time()
-        print(f"Max episode steps setting: {end_time - start_time:.6f} seconds")
 
-        start_time = time.time()
         robot_init, object_init = self.ref.get_init()
         qpos = self.sys.qpos0
         qvel = jp.zeros(qpos.shape)
@@ -166,16 +144,11 @@ class TrackEnv(BaseV0):
                 self.ref.robot_dim : self.ref.robot_dim + 3
             ].set(object_init[:3])
             qpos = qpos.at[-3:].set(quat2euler(object_init[3:]))
-        print ("qpos shape", qpos.shape)
+
         data = self.pipeline_init(qpos, qvel)
-        end_time = time.time()
-        print(f"Pipeline initialization: {end_time - start_time:.6f} seconds")
 
     def reset(self, rng: jax.Array = None) -> State:
-        start_time = time.time()
         self.ref.reset()
-        end_time = time.time()
-        print(f"MJX reset {end_time - start_time:.6f} seconds")
         super().reset(rng)
         key, subkey = jax.random.split(rng)
 
@@ -309,7 +282,6 @@ class TrackEnv(BaseV0):
         pipeline_state: base.State
     ) -> dict:
         curr_ref = self.ref.get_reference(pipeline_state.time + self.motion_start_time)
-        
         # update reference in sim
         qpos = pipeline_state.qpos
         qpos = qpos.at[:3].set(curr_ref.object[:3])
@@ -349,37 +321,40 @@ class TrackEnv(BaseV0):
         return info
     
 
-jax.config.update("jax_platform_name", "cuda")
+# jax.config.update("jax_platform_name", "cpu")
 
-model_path = "/../assets/hand/myohand_object_mjx.xml"
-object_name = "airplane"
-reference = {
-            "time": (0.0, 4.0),
-            "robot": jp.zeros((2, 29)),
-            "robot_vel": jp.zeros((2, 29)),
-            "object_init": jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
-            "object": jp.array(
-                [
-                    [-0.2, -0.2, 0.1, 1.0, 0.0, 0.0, -1.0],
-                    [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0],
-                ]
-            ),
-        }
-obs_keys = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"]
-weighted_reward_keys = {
-            "pose": 0.0,
-            "object": 1.0,
-            "bonus": 1.0,
-            "penalty": -2,
-        }
+# model_path = "/../assets/hand/myohand_object_mjx.xml"
+# object_name = "airplane"
+# reference = {
+#             "time": (0.0, 4.0),
+#             "robot": jp.zeros((2, 29)),
+#             "robot_vel": jp.zeros((2, 29)),
+#             "object_init": jp.array((0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0)),
+#             "object": jp.array(
+#                 [
+#                     [-0.2, -0.2, 0.1, 1.0, 0.0, 0.0, -1.0],
+#                     [0.2, 0.2, 0.1, 1.0, 0.0, 0.0, 1.0],
+#                 ]
+#             ),
+#         }
+# obs_keys = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"]
+# weighted_reward_keys = {
+#             "pose": 0.0,
+#             "object": 1.0,
+#             "bonus": 1.0,
+#             "penalty": -2,
+#         }
 
-jax_env = TrackEnv(
-            model_path=model_path,
-            object_name=object_name,
-            reference=reference,
-            obs_keys=obs_keys,
-            weighted_reward_keys=weighted_reward_keys,
-        )
+# jax_env = TrackEnv(
+#             model_path=model_path,
+#             object_name=object_name,
+#             reference=reference,
+#             obs_keys=obs_keys,
+#             weighted_reward_keys=weighted_reward_keys,
+#         )
 
-key = jax.random.PRNGKey(0)
-jax_state = jax_env.reset(rng=key)
+# key = jax.random.PRNGKey(0)
+# start_time = time.time()
+# jax_state = jax_env.reset(rng=key)
+# end_time = time.time()
+# print(f"Time taken: {end_time - start_time} seconds")

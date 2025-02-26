@@ -12,7 +12,7 @@
     <compiler meshdir=".." texturedir=".."/>
 
     <worldbody>
-        <include file="assets/myohand_body.xml"/>
+        <include file="assets/myohand_body_mjx.xml"/>
     </worldbody>
 
 </mujoco>
