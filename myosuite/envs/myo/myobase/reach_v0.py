@@ -108,12 +108,11 @@ class ReachEnvV0(BaseV0):
             obs_dict["tip_pos"]
         )
 
-        print ("Mujoco target pos", obs_dict["target_pos"])
-        print ("Mujoco tip pos", obs_dict["tip_pos"])
         return obs_dict
 
     def get_reward_dict(self, obs_dict):
         reach_dist = np.linalg.norm(obs_dict["reach_err"], axis=-1)
+        
         act_mag = (
             np.linalg.norm(self.obs_dict["act"], axis=-1) / self.sim.model.na
             if self.sim.model.na != 0

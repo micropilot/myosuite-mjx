@@ -43,57 +43,51 @@ class ReachEnvV0(BaseV0):
             sites=self.target_reach_range.keys(),
             **kwargs
         )
-        
+    
+    def get_info(
+            self,
+            pipeline_state: base.State
+        ) -> dict:
+        info ={}
 
-    def reset(self, rng: jax.Array = None) -> State:
-        key, *subkey = jax.random.split(rng, len(self.target_reach_range.items()) + 1)
+        info["tip_pos"] = pipeline_state.site_xpos[self.tip_sids]
+        info["target_pos"] = self.sys.mj_model.site_pos[self.target_sids] # This is different from mujoco version
 
-        # info = {}
-        for idx, (site, span) in enumerate(self.target_reach_range.items()):
-            sid = mujoco.mj_name2id(
-                        self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
-                    )
-            # target_pos = jax.random.uniform(
-            #     subkey[idx], 
-            #     shape=span[0].shape, 
-            #     minval=self.target_reach_range[site][0], 
-            #     maxval=self.target_reach_range[site][1]
-            # )
-            # info[site] = target_pos
+        info["reach_err"] = info["target_pos"] - info["tip_pos"]
 
-            self.sys.mj_model.site_pos[sid] = jax.random.uniform(
-                subkey[idx], 
-                shape=span[0].shape, 
-                minval=self.target_reach_range[site][0], 
-                maxval=self.target_reach_range[site][1]
+        return info
+    
+    def get_obs(
+        self, 
+        pipeline_state: base.State, 
+        info: dict
+    ) -> jax.Array:
+        position = pipeline_state.qpos
+        velocity = pipeline_state.qvel * pipeline_state.time
+        tip_pos = info["tip_pos"]
+        reach_err = info["reach_err"]
+
+        if self.sys.na > 0:
+            obs = jp.concatenate(
+                [
+                    position,
+                    velocity,
+                    tip_pos.flatten(),
+                    reach_err.flatten(),
+                    pipeline_state.act,
+                ]
             )
-            
-        super().reset(key)
+        else:
+            obs = jp.concatenate(
+                [position, velocity, tip_pos.flatten(), reach_err.flatten()]
+            )
 
-        qpos = self.sys.qpos0   
-        qvel = jp.zeros(qpos.shape)
-        
-        reward, done, zero = jp.zeros(3)
-        pipeline_state = self.pipeline_init(qpos, qvel)
-
-        info = self.get_info(pipeline_state)
-        obs = self.get_obs(pipeline_state, info)
-        metrics = {k: jp.array(zero)for k in self.weighted_reward_keys.keys()}
-        metrics['reward'] = reward
-        
-        state = State(
-            pipeline_state=pipeline_state, 
-            obs=obs, 
-            reward=reward, 
-            done=done, 
-            metrics=metrics,
-            info=info
-        )
-
-        return state
-
+        return obs
+    
     def compute_reward(self, pipeline_state: base.State, info: dict) -> dict:
-        reach_dist = jp.linalg.norm(info["reach_err"], axis=-1)
+        reach_dist = jp.linalg.norm(info["reach_err"], axis=-1)[0]
+
+        # TODO: act_mag not implemented 
 
         far_th = jax.lax.cond(
             jp.squeeze(pipeline_state.time) > 2 * self.dt,
@@ -119,47 +113,30 @@ class ReachEnvV0(BaseV0):
         )
 
         return reward, done, metrics
-
-    def get_obs(
-            self, 
-            pipeline_state: base.State, 
-            info: dict
-        ) -> jax.Array:
-
-        position = pipeline_state.qpos
-        velocity = pipeline_state.qvel * pipeline_state.time
-        tip_pos = info["tip_pos"]
-        reach_err = info["reach_err"]
-
-        if self.sys.na > 0:
-            obs = jp.concatenate(
-                [
-                    position,
-                    velocity,
-                    tip_pos.flatten(),
-                    reach_err.flatten(),
-                    pipeline_state.act,
-                ]
-            )
-        else:
-            obs = jp.concatenate(
-                [position, velocity, tip_pos.flatten(), reach_err.flatten()]
-            )
-
-        return obs
     
-    def get_info(
-            self,
-            pipeline_state: base.State
-        ) -> dict:
-        info ={}
-        print ("MJX target pos", pipeline_state.site_xpos[self.target_sids])
-        print ("MJX tip pos", pipeline_state.site_xpos[self.tip_sids])
+    def reset(self, rng: jax.Array = None) -> State:
+        key, *subkey = jax.random.split(rng, len(self.target_reach_range.items()) + 1)
 
-        info["tip_pos"] = pipeline_state.site_xpos[self.tip_sids]
-        info["target_pos"] = pipeline_state.site_xpos[self.target_sids]
+        # info = {}
+        for idx, (site, span) in enumerate(self.target_reach_range.items()):
+            sid = mujoco.mj_name2id(
+                        self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
+                    )
 
-        info["reach_err"] = info["target_pos"] - info["tip_pos"]
+            self.sys.mj_model.site_pos[sid] = jax.random.uniform(
+                subkey[idx], 
+                shape=span[0].shape, 
+                minval=self.target_reach_range[site][0], 
+                maxval=self.target_reach_range[site][1]
+            )
+            
+        return super().reset(key)
 
-        return info
+        
+
+    
+
+
+    
+
 

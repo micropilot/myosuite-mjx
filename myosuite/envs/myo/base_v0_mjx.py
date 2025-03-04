@@ -112,13 +112,29 @@ class BaseV0(EnvBaseMJX):
             # Set EIP to 0
             action[self.EIPpos] = 0
 
+        pipeline_state = self.pipeline_step(state.pipeline_state, action)
+        info = self.get_info(pipeline_state)
+        obs = self.get_obs(pipeline_state, info)
+
+        reward, done, metrics = self.compute_reward(pipeline_state, info)
+        metrics['reward'] = reward
+
+        state.metrics.update(**metrics)
+
+        return state.replace(
+            pipeline_state=pipeline_state, 
+            obs=obs, 
+            reward=reward, 
+            done=done,
+            metrics=metrics,
+            info=info
+        )
         
 
     def reset(
             self, 
             rng: jax.Array = None, 
             fatigue_reset: bool = True, 
-            info: dict = {}
         ) -> State:
         if fatigue_reset:
             if self.muscle_condition == "fatigue":
@@ -128,6 +144,8 @@ class BaseV0(EnvBaseMJX):
                 )
             else:
                 pass
+
+        return super().reset(rng)
 
 
     def get_obs(
