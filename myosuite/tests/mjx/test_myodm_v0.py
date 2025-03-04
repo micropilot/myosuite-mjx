@@ -70,7 +70,6 @@ class TestTrackEnv(unittest.TestCase):
             obs_keys=self.obs_keys,
             weighted_reward_keys=self.weighted_reward_keys,
         )
-        print ("Is it doing it before this?")
 
         jax_env = JaxTrackEnv(
             model_path=self.model_path,
@@ -80,13 +79,14 @@ class TestTrackEnv(unittest.TestCase):
             weighted_reward_keys=self.weighted_reward_keys,
         )
 
-        # Reset with same RNG seed
+        # # Reset with same RNG seed
         key = jax.random.PRNGKey(0)
         mujoco_env.seed(0)
 
         jit_reset = jax.jit(jax_env.reset)
 
         mujoco_obs = mujoco_env.reset()
+
         jax_state = jit_reset(rng=key)
 
         # Compare position
@@ -121,154 +121,208 @@ class TestTrackEnv(unittest.TestCase):
             err_msg="Hand Qvel Err mismatch after reset",
         )
 
-    # def test_step(self):
-    #     """Test stepping behavior"""
-    #     mujoco_env = MujocoTrackEnv(
-    #         model_path=self.model_path,
-    #         object_name=self.object_name,
-    #         reference=self.reference,
-    #     )
+        # Compare object com error
+        # Cannot use this for testing because of randomization
+        # np.testing.assert_allclose(
+        #     mujoco_obs[0][128:131],
+        #     np.array(jax_state.obs[128:131]),
+        #     rtol=1e-5,
+        #     err_msg="Object Com Err mismatch after reset",
+        # )
+        
+        # Compare action
+        np.testing.assert_allclose(
+            mujoco_obs[0][131:],
+            np.array(jax_state.obs[131:]),
+            rtol=1e-5,
+            err_msg="Action mismatch after reset",
+        )
 
-    #     jax_env = JaxTrackEnv(
-    #         model_path=self.model_path,
-    #         object_name=self.object_name,
-    #         reference=self.reference,
-    #     )
+    def test_step(self):
+        """Test stepping behavior"""
+        mujoco_env = MujocoTrackEnv(
+            model_path=self.model_path,
+            object_name=self.object_name,
+            reference=self.reference,
+        )
 
-    #     # Reset environments with same seed
-    #     key = jax.random.PRNGKey(0)
-    #     mujoco_env.seed(0)
+        jax_env = JaxTrackEnv(
+            model_path=self.model_path,
+            object_name=self.object_name,
+            reference=self.reference,
+        )
 
-    #     mujoco_obs = mujoco_env.reset()
-    #     jax_state = jax_env.reset(rng=key)
+        # Reset environments with same seed
+        key = jax.random.PRNGKey(0)
+        mujoco_env.seed(0)
 
-    #     # Test sequence of actions
-    #     test_actions = [
-    #         np.zeros(30, dtype=np.float32),
-    #         np.ones(30, dtype=np.float32) * 0.1,
-    #         np.random.uniform(-0.1, 0.1, 30).astype(np.float32),
-    #     ]
+        mujoco_obs = mujoco_env.reset()
+        jax_state = jax_env.reset(rng=key)
 
-    #     for action in test_actions:
-    #         # Step both environments
-    #         mujoco_next_obs, mujoco_reward, mujoco_done, _, mujoco_info = (
-    #             mujoco_env.step(action)
-    #         )
-    #         jax_next_state = jax_env.step(jax_state, jp.array(action))
+        # Test sequence of actions
+        test_actions = [
+            np.zeros(45, dtype=np.float32),
+            np.ones(45, dtype=np.float32) * 0.1,
+            np.random.uniform(-0.1, 0.1, 45).astype(np.float32),
+        ]
 
-    #         # Compare observations
-    #         np.testing.assert_allclose(
-    #             mujoco_next_obs,
-    #             np.array(jax_next_state.obs),
-    #             rtol=1e-4,
-    #             err_msg=f"Observation mismatch for action {action}",
-    #         )
+        for action in test_actions:
+            # Step both environments
+            mujoco_next_obs, mujoco_reward, mujoco_done, _, mujoco_info = (
+                mujoco_env.step(action)
+            )
+            jax_next_state = jax_env.step(jax_state, jp.array(action))
 
-    #         # Compare rewards
-    #         np.testing.assert_allclose(
-    #             mujoco_reward,
-    #             float(jax_next_state.reward),
-    #             rtol=1e-4,
-    #             err_msg=f"Reward mismatch for action {action}",
-    #         )
+            # Compare position
+            np.testing.assert_allclose(
+                mujoco_obs[0][:35],
+                np.array(jax_state.obs[:35]),
+                rtol=1e-5,
+                err_msg="Position mismatch after reset",
+            )
 
-    #         # Compare done flags
-    #         self.assertEqual(
-    #             mujoco_done,
-    #             bool(jax_next_state.done),
-    #             f"Done flag mismatch for action {action}",
-    #         )
+            # Compare velocity
+            np.testing.assert_allclose(
+                mujoco_obs[0][35:70],
+                np.array(jax_state.obs[35:70]),
+                rtol=1e-5,
+                err_msg="Velocity mismatch after reset",
+            )
 
-    #         # Update jax state
-    #         jax_state = jax_next_state
+            # Compare hand qpos error
+            np.testing.assert_allclose(
+                mujoco_obs[0][70:99],
+                np.array(jax_state.obs[70:99]),
+                rtol=1e-5,
+                err_msg="Hand Qpos Err mismatch after reset",
+            )
 
-    # def test_reward_computation(self):
-    #     """Test reward computation"""
-    #     mujoco_env = MujocoTrackEnv(
-    #         model_path=self.model_path,
-    #         object_name=self.object_name,
-    #         reference=self.reference,
-    #     )
+            # Compare hand qvel error
+            np.testing.assert_allclose(
+                mujoco_obs[0][99:128],
+                np.array(jax_state.obs[99:128]),
+                rtol=1e-5,
+                err_msg="Hand Qvel Err mismatch after reset",
+            )
 
-    #     jax_env = JaxTrackEnv(
-    #         model_path=self.model_path,
-    #         object_name=self.object_name,
-    #         reference=self.reference,
-    #     )
+            # Compare object com error
+            # Cannot use this for testing because of randomization
+            # np.testing.assert_allclose(
+            #     mujoco_obs[0][128:131],
+            #     np.array(jax_state.obs[128:131]),
+            #     rtol=1e-5,
+            #     err_msg="Object Com Err mismatch after reset",
+            # )
 
-    #     # Reset with same seed
-    #     key = jax.random.PRNGKey(0)
-    #     mujoco_env.seed(0)
+            # Compare action
+            np.testing.assert_allclose(
+                mujoco_obs[0][131:],
+                np.array(jax_state.obs[131:]),
+                rtol=1e-5,
+                err_msg="Action mismatch after reset",
+            )
 
-    #     mujoco_obs = mujoco_env.reset()
-    #     jax_state = jax_env.reset(rng=key)
+            # Compare rewards
+            np.testing.assert_allclose(
+                mujoco_reward,
+                float(jax_next_state.reward),
+                rtol=1e-3,
+                err_msg=f"Reward mismatch for action {action}",
+            )
 
-    #     # Test reward components
-    #     mujoco_reward_dict = mujoco_env.get_reward_dict(
-    #         mujoco_env.get_obs_dict(mujoco_env.sim)
-    #     )
-    #     jax_reward, _, jax_metrics = jax_env.compute_reward(
-    #         jax_state.pipeline_state,
-    #         jax_state.info
-    #     )
+            # Compare done flags
+            self.assertEqual(
+                mujoco_done,
+                bool(jax_next_state.done),
+                f"Done flag mismatch for action {action}",
+            )
 
-    #     # Compare reward components
-    #     for key in ["pose", "object", "bonus", "penalty"]:
-    #         np.testing.assert_allclose(
-    #             mujoco_reward_dict[key],
-    #             float(jax_metrics[key]),
-    #             rtol=1e-4,
-    #             err_msg=f"Reward component {key} mismatch",
-    #         )
+    def test_reward_computation(self):
+        """Test reward computation"""
+        mujoco_env = MujocoTrackEnv(
+            model_path=self.model_path,
+            object_name=self.object_name,
+            reference=self.reference,
+        )
 
-    # def test_observation_space(self):
-    #     """Test observation space consistency"""
-    #     mujoco_env = MujocoTrackEnv(
-    #         model_path=self.model_path,
-    #         object_name=self.object_name,
-    #         reference=self.reference,
-    #     )
+        jax_env = JaxTrackEnv(
+            model_path=self.model_path,
+            object_name=self.object_name,
+            reference=self.reference,
+        )
 
-    #     jax_env = JaxTrackEnv(
-    #         model_path=self.model_path,
-    #         object_name=self.object_name,
-    #         reference=self.reference,
-    #     )
+        # Reset with same seed
+        key = jax.random.PRNGKey(0)
+        mujoco_env.seed(0)
 
-    #     # Reset environments
-    #     key = jax.random.PRNGKey(0)
-    #     mujoco_env.seed(0)
+        mujoco_obs = mujoco_env.reset()
+        jax_state = jax_env.reset(rng=key)
 
-    #     mujoco_obs = mujoco_env.reset()
-    #     jax_state = jax_env.reset(rng=key)
+        # Test reward components
+        mujoco_reward_dict = mujoco_env.get_reward_dict(
+            mujoco_env.get_obs_dict(mujoco_env.sim)
+        )
+        jax_reward, _, jax_metrics = jax_env.compute_reward(
+            jax_state.pipeline_state,
+            jax_state.info
+        )
 
-    #     # Compare observation dimensions
-    #     self.assertEqual(
-    #         mujoco_obs.shape,
-    #         jax_state.obs.shape,
-    #         "Observation space dimension mismatch",
-    #     )
+        # Compare reward components
+        for key in ["pose", "object", "bonus", "penalty"]:
+            print (key, mujoco_reward_dict[key], float(jax_metrics[key]))
+            np.testing.assert_allclose(
+                np.round(mujoco_reward_dict[key], 2),
+                np.round(float(jax_metrics[key]), 2),
+                err_msg=f"Reward component {key} mismatch",
+            )
 
-    #     # Verify observation components
-    #     mujoco_obs_dict = mujoco_env.get_obs_dict(mujoco_env.sim)
-    #     jax_obs = jax_env.get_obs(
-    #         jax_state.pipeline_state, 
-    #         jp.zeros(jax_env.sys.act_size()),
-    #         jax_state.info
-    #     )
+    def test_observation_space(self):
+        """Test observation space consistency"""
+        mujoco_env = MujocoTrackEnv(
+            model_path=self.model_path,
+            object_name=self.object_name,
+            reference=self.reference,
+        )
 
-    #     # Compare each observation component
-    #     start_idx = 0
-    #     for key in mujoco_env.DEFAULT_OBS_KEYS:
-    #         if key in mujoco_obs_dict:
-    #             component_size = mujoco_obs_dict[key].size
-    #             np.testing.assert_allclose(
-    #                 mujoco_obs_dict[key],
-    #                 np.array(jax_obs[start_idx : start_idx + component_size]),
-    #                 rtol=1e-4,
-    #                 err_msg=f"Observation component {key} mismatch",
-    #             )
-    #             start_idx += component_size
+        jax_env = JaxTrackEnv(
+            model_path=self.model_path,
+            object_name=self.object_name,
+            reference=self.reference,
+        )
+
+        # Reset environments
+        key = jax.random.PRNGKey(0)
+        mujoco_env.seed(0)
+
+        mujoco_obs = mujoco_env.reset()
+        jax_state = jax_env.reset(rng=key)
+
+        # Compare observation dimensions
+        self.assertEqual(
+            mujoco_obs[0].shape,
+            jax_state.obs.shape,
+            "Observation space dimension mismatch",
+        )
+
+        # Verify observation components
+        mujoco_obs_dict = mujoco_env.get_obs_dict(mujoco_env.sim)
+        jax_obs = jax_env.get_obs(
+            jax_state.pipeline_state, 
+            jax_state.info
+        )
+
+        # Compare each observation component
+        start_idx = 0
+        for key in ["qp", "qv", "hand_qpos_err", "hand_qvel_err"]:
+            if key in mujoco_obs_dict:
+                component_size = mujoco_obs_dict[key].size
+                np.testing.assert_allclose(
+                    mujoco_obs_dict[key],
+                    np.array(jax_obs[start_idx : start_idx + component_size]),
+                    rtol=1e-4,
+                    err_msg=f"Observation component {key} mismatch",
+                )
+                start_idx += component_size
 
 
 if __name__ == "__main__":

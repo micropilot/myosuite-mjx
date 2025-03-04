@@ -13,59 +13,76 @@ class ReachEnvV0(BaseV0):
     def __init__(
         self,
         model_path: str,
-        obs_keys: list = ["qpos", "qvel", "tip_pos", "reach_err"],
-        weighted_reward_keys: dict = {
-            "reach": 1.0,
-            "bonus": 4.0,
-            "penalty": 50,
-        },
-        target_reach_range: dict = None,
-        far_th: float = 0.35,
+        frame_skip: int = 10,
         **kwargs
     ):
-
         super().__init__(
-            model_path,
-            obs_keys=obs_keys,
-            weighted_reward_keys=weighted_reward_keys,
-            sites=target_reach_range.keys(),
-            **kwargs
+            model_path=model_path,
+            frame_skip=frame_skip,
         )
 
-        self.target_reach_range = target_reach_range
-        self.iftip_min = target_reach_range["IFtip"][0]
-        self.iftip_max = target_reach_range["IFtip"][1]
+        self._setup(**kwargs)
+
+    def _setup(
+            self,
+            target_reach_range: dict,
+            far_th: float = 0.35,
+            obs_keys: list = ["qpos", "qvel", "tip_pos", "reach_err"],
+            weighted_reward_keys: dict = {
+                "reach": 1.0,
+                "bonus": 4.0,
+                "penalty": 50,
+            },
+            **kwargs
+    ):
         self.far_th = far_th
+        self.target_reach_range = target_reach_range
+        super()._setup(
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+            sites=self.target_reach_range.keys(),
+            **kwargs
+        )
+        
 
     def reset(self, rng: jax.Array = None) -> State:
-        super().reset(rng)
-        key, subkey = jax.random.split(rng)
+        key, *subkey = jax.random.split(rng, len(self.target_reach_range.items()) + 1)
 
-        qpos = self.sys.qpos0
-        qvel = jp.zeros(qpos.shape)
-
-        info = {}
-        for site, span in self.target_reach_range.items():
+        # info = {}
+        for idx, (site, span) in enumerate(self.target_reach_range.items()):
             sid = mujoco.mj_name2id(
                         self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
                     )
-            target_pos = jax.random.uniform(
-                key, 
+            # target_pos = jax.random.uniform(
+            #     subkey[idx], 
+            #     shape=span[0].shape, 
+            #     minval=self.target_reach_range[site][0], 
+            #     maxval=self.target_reach_range[site][1]
+            # )
+            # info[site] = target_pos
+
+            self.sys.mj_model.site_pos[sid] = jax.random.uniform(
+                subkey[idx], 
                 shape=span[0].shape, 
                 minval=self.target_reach_range[site][0], 
                 maxval=self.target_reach_range[site][1]
             )
-            info[site] = target_pos
+            
+        super().reset(key)
 
+        qpos = self.sys.qpos0   
+        qvel = jp.zeros(qpos.shape)
+        
         reward, done, zero = jp.zeros(3)
-        data = self.pipeline_init(qpos, qvel)
+        pipeline_state = self.pipeline_init(qpos, qvel)
 
-        obs = self.get_obs(data, jp.zeros(self.sys.act_size()), info)
+        info = self.get_info(pipeline_state)
+        obs = self.get_obs(pipeline_state, info)
         metrics = {k: jp.array(zero)for k in self.weighted_reward_keys.keys()}
         metrics['reward'] = reward
         
         state = State(
-            pipeline_state=data, 
+            pipeline_state=pipeline_state, 
             obs=obs, 
             reward=reward, 
             done=done, 
@@ -76,20 +93,7 @@ class ReachEnvV0(BaseV0):
         return state
 
     def compute_reward(self, pipeline_state: base.State, info: dict) -> dict:
-        tip_pos = pipeline_state.site_xpos[self.tip_sids]
-        # Initialize an empty list to store target positions
-        target_pos_list = []
-
-        # Iterate over the keys in target_reach_range
-        for site in self.target_reach_range.keys():
-            # Check if the site is in info and append its value to the list
-            if site in info:
-                target_pos_list.append(info[site])
-
-        # Concatenate all the target positions into a single vector
-        target_pos = jp.concatenate(target_pos_list) 
-
-        reach_dist = jp.linalg.norm(tip_pos - target_pos)
+        reach_dist = jp.linalg.norm(info["reach_err"], axis=-1)
 
         far_th = jax.lax.cond(
             jp.squeeze(pipeline_state.time) > 2 * self.dt,
@@ -119,27 +123,13 @@ class ReachEnvV0(BaseV0):
     def get_obs(
             self, 
             pipeline_state: base.State, 
-            action: jax.Array,
             info: dict
         ) -> jax.Array:
 
         position = pipeline_state.qpos
         velocity = pipeline_state.qvel * pipeline_state.time
-        tip_pos = pipeline_state.site_xpos[self.tip_sids]
-
-        # Initialize an empty list to store target positions
-        target_pos_list = []
-
-        # Iterate over the keys in target_reach_range
-        for site in self.target_reach_range.keys():
-            # Check if the site is in info and append its value to the list
-            if site in info:
-                target_pos_list.append(info[site])
-
-        # Concatenate all the target positions into a single vector
-        target_pos = jp.concatenate(target_pos_list)
-
-        reach_err = target_pos - tip_pos
+        tip_pos = info["tip_pos"]
+        reach_err = info["reach_err"]
 
         if self.sys.na > 0:
             obs = jp.concatenate(
@@ -157,3 +147,19 @@ class ReachEnvV0(BaseV0):
             )
 
         return obs
+    
+    def get_info(
+            self,
+            pipeline_state: base.State
+        ) -> dict:
+        info ={}
+        print ("MJX target pos", pipeline_state.site_xpos[self.target_sids])
+        print ("MJX tip pos", pipeline_state.site_xpos[self.tip_sids])
+
+        info["tip_pos"] = pipeline_state.site_xpos[self.tip_sids]
+        info["target_pos"] = pipeline_state.site_xpos[self.target_sids]
+
+        info["reach_err"] = info["target_pos"] - info["tip_pos"]
+
+        return info
+

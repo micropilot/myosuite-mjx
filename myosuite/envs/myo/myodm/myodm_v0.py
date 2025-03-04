@@ -199,12 +199,11 @@ class TrackEnv(BaseV0):
         return result
 
     def get_obs_dict(self, sim):
-        print ("get obs dict")
         obs_dict = {}
 
         # get reference for current time (returns a named tuple)
         curr_ref = self.ref.get_reference(sim.data.time + self.motion_start_time)
-        self.update_reference_insim(curr_ref)
+        # self.update_reference_insim(curr_ref)
 
         obs_dict["time"] = np.array([self.sim.data.time])
         obs_dict["qp"] = sim.data.qpos.copy()
@@ -288,12 +287,8 @@ class TrackEnv(BaseV0):
         pose_reward = self.qpos_reward_weight * qpos_reward
         vel_reward = self.qvel_reward_weight * qvel_reward
 
-        # print(f"Time: {obs_dict['time']} Error Pose: {self.norm2(obs_dict['hand_qpos_err'])} {obs_dict['hand_qpos_err']}    Error Obj:{obs_dict['obj_com_err']}")
-
         base_error = np.sqrt(self.norm2(obs_dict["base_error"]))
         base_reward = np.exp(-self.base_err_scale * base_error)
-
-        # print(base_error, base_reward)
 
         rwd_dict = collections.OrderedDict(
             (
@@ -311,8 +306,6 @@ class TrackEnv(BaseV0):
         rwd_dict["dense"] = np.sum(
             [wt * rwd_dict[key] for key, wt in self.rwd_keys_wt.items()], axis=0
         )
-
-        # print(rwd_dict['dense'], obj_com_err,rwd_dict['done'],rwd_dict['sparse'])
 
         return rwd_dict
 
@@ -333,7 +326,6 @@ class TrackEnv(BaseV0):
         return result
 
     def reset(self, **kwargs):
-        # print("Reset")
         self.ref.reset()
         obs = super().reset(
             reset_qpos=self.init_qpos, reset_qvel=self.init_qvel, **kwargs

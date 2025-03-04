@@ -30,7 +30,7 @@ class BaseV0(env_base.MujocoEnv):
         fatigue_reset_vec=None,
         fatigue_reset_random=False,
         **kwargs,
-    ):
+    ):  
         if self.sim.model.na > 0 and "act" not in obs_keys:
             obs_keys = (
                 obs_keys.copy()

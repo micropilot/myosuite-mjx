@@ -9,26 +9,16 @@ from myosuite.envs.myo.fatigue_jax import CumulativeFatigue
 
 
 class BaseV0(EnvBaseMJX):
-    def __init__(
+    def _setup(
         self,
-        model_path: str,
         obs_keys: list,
         weighted_reward_keys: dict,
         sites: list = None,
-        frame_skip=10,
         muscle_condition="",
         fatigue_reset_vec=None,
         fatigue_reset_random=False,
-        normalize_act=True,
         **kwargs
     ):  
-        super().__init__(
-            model_path=model_path,
-            obs_keys=obs_keys,
-            weighted_reward_keys=weighted_reward_keys,
-            frame_skip=frame_skip,
-        )
-
         if self.sys.na > 0 and "act" not in obs_keys:
             obs_keys = obs_keys.copy()
             obs_keys.append("act")
@@ -55,10 +45,13 @@ class BaseV0(EnvBaseMJX):
         self.muscle_condition = muscle_condition
         self.fatigue_reset_vec = fatigue_reset_vec
         self.fatigue_reset_random = fatigue_reset_random
-        self.frame_skip = frame_skip
-        self.weighted_reward_keys = weighted_reward_keys
-        self.normalize_act = normalize_act
         self.initializeConditions()
+
+        super()._setup(
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+            **kwargs
+        )
 
         # TODO: setup viewer later
 
@@ -104,7 +97,6 @@ class BaseV0(EnvBaseMJX):
 
         # Explicitely project normalized space (-1,1) to actuator space (0,1) if muscles
         if self.sys.na and self.normalize_act:
-            # Use .at[] to perform the assignment on the JAX array
             action = action.at[muscle_act_ind].set(
                 1.0 / (1.0 + jp.exp(-5.0 * (action[muscle_act_ind] - 0.5)))
             )
@@ -120,22 +112,7 @@ class BaseV0(EnvBaseMJX):
             # Set EIP to 0
             action[self.EIPpos] = 0
 
-        pipeline_state = self.pipeline_step(state.pipeline_state, action)
-        obs = self.get_obs(pipeline_state, action, state.info)
-
-        reward, done, metrics = self.compute_reward(pipeline_state, state.info)
-        metrics['reward'] = reward
-
-        state.metrics.update(**metrics)
-
-        return state.replace(
-            pipeline_state=pipeline_state, 
-            obs=obs, 
-            reward=reward, 
-            done=done,
-            metrics=metrics,
-            info=state.info
-        )
+        
 
     def reset(
             self, 
@@ -156,7 +133,12 @@ class BaseV0(EnvBaseMJX):
     def get_obs(
             self, 
             pipeline_state: base.State, 
-            action: jax.Array, 
             info: dict
         )-> jax.Array:
+        raise NotImplementedError
+
+    def get_info(
+            self,
+            pipeline_state: base.State
+        ) -> dict:
         raise NotImplementedError

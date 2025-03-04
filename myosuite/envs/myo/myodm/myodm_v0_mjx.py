@@ -135,17 +135,17 @@ class TrackEnv(BaseV0):
             self.spec.max_episode_steps = self.ref.horizon
 
         robot_init, object_init = self.ref.get_init()
-        qpos = self.sys.qpos0
-        qvel = jp.zeros(qpos.shape)
+        self.init_qpos = self.sys.qpos0
+        self.init_qvel = jp.zeros(self.init_qpos.shape)
         if robot_init is not None:
-            qpos = qpos.at[: self.ref.robot_dim].set(robot_init)
+            self.init_qpos = self.init_qpos.at[: self.ref.robot_dim].set(robot_init)
         if object_init is not None:
-            qpos = qpos.at[
+            self.init_qpos = self.init_qpos.at[
                 self.ref.robot_dim : self.ref.robot_dim + 3
             ].set(object_init[:3])
-            qpos = qpos.at[-3:].set(quat2euler(object_init[3:]))
+            self.init_qpos = self.init_qpos.at[-3:].set(quat2euler(object_init[3:]))
 
-        data = self.pipeline_init(qpos, qvel)
+        data = self.pipeline_init(self.init_qpos, self.init_qvel)
 
     def reset(self, rng: jax.Array = None) -> State:
         self.ref.reset()
@@ -153,14 +153,11 @@ class TrackEnv(BaseV0):
         key, subkey = jax.random.split(rng)
 
         # qpos and qvel contain both hand and object pose and vel
-        qpos = self.sys.qpos0
-        qvel = jp.zeros(qpos.shape)
-
         reward, done, zero = jp.zeros(3)
-        pipeline_state = self.pipeline_init(qpos, qvel)
+        pipeline_state = self.pipeline_init(self.init_qpos, self.init_qvel)
 
         info = self.get_info(pipeline_state)
-        obs = self.get_obs(pipeline_state, jp.zeros(self.sys.act_size()), info)
+        obs = self.get_obs(pipeline_state, info)
         metrics = {k: jp.array(zero) for k in self.weighted_reward_keys.keys()}
         metrics['reward'] = reward
 
@@ -203,7 +200,7 @@ class TrackEnv(BaseV0):
         obj_reward = jp.exp(-self.obj_err_scale * (obj_com_err + 0.1 * obj_rot_err))
 
         # calculate lift bonus
-        lift_bonus = (tgt_obj_com[2] >= self._lift_z) and (obj_com[2] >= self._lift_z)
+        lift_bonus = (tgt_obj_com[2] >= self.lift_z) and (obj_com[2] >= self.lift_z)
 
         # calculate reward terms
         qpos_reward = jp.exp(
@@ -239,7 +236,7 @@ class TrackEnv(BaseV0):
         )
 
         done = jp.logical_or(jp.logical_or(obj_term, qpos_term), base_term)
-
+        
         metrics = {
             "pose": pose_reward + vel_reward,
             "object": obj_reward + base_reward,
@@ -256,7 +253,6 @@ class TrackEnv(BaseV0):
     def get_obs(
         self,
         pipeline_state: base.State,
-        action: jax.Array,
         info: dict
     ) -> jp.ndarray:
         position = pipeline_state.qpos
@@ -265,16 +261,27 @@ class TrackEnv(BaseV0):
         hand_qvel_err = info["hand_qvel_err"]
         obj_com_err = info["obj_com_err"]
 
-        obs = jp.concatenate(
-            [
-                position,
-                velocity,
-                hand_qpos_err.flatten(),
-                hand_qvel_err.flatten(),
-                obj_com_err.flatten(),
-            ]
-        )
-
+        if self.sys.na > 0:
+            obs = jp.concatenate(
+                [
+                    position,
+                    velocity,
+                    hand_qpos_err.flatten(),
+                    hand_qvel_err.flatten(),
+                    obj_com_err.flatten(),
+                    pipeline_state.act,
+                ]
+            )
+        else:
+            obs = jp.concatenate(
+                [
+                    position, 
+                    velocity, 
+                    hand_qpos_err.flatten(), 
+                    hand_qvel_err.flatten(), 
+                    obj_com_err.flatten()
+                ]
+            )
         return obs
 
     def get_info(
@@ -283,9 +290,11 @@ class TrackEnv(BaseV0):
     ) -> dict:
         curr_ref = self.ref.get_reference(pipeline_state.time + self.motion_start_time)
         # update reference in sim
-        qpos = pipeline_state.qpos
-        qpos = qpos.at[:3].set(curr_ref.object[:3])
-        data = self.pipeline_init(qpos, pipeline_state.qvel)
+        # qpos = pipeline_state.qpos
+        # jax.debug.print("MJX qpos {}", qpos)
+        # qpos = qpos.at[:3].set(curr_ref.object[:3])
+        # data = self.pipeline_init(qpos, pipeline_state.qvel)
+        # jax.debug.print("MJX qpos after update{}", data.qpos)
         
         info = {}
 

@@ -107,6 +107,9 @@ class ReachEnvV0(BaseV0):
         obs_dict["reach_err"] = np.array(obs_dict["target_pos"]) - np.array(
             obs_dict["tip_pos"]
         )
+
+        print ("Mujoco target pos", obs_dict["target_pos"])
+        print ("Mujoco tip pos", obs_dict["tip_pos"])
         return obs_dict
 
     def get_reward_dict(self, obs_dict):
