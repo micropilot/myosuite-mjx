@@ -166,8 +166,7 @@ class TestFatigue(unittest.TestCase):
             jax_MA, jax_MR, jax_MF = jax_fatigue.compute_act(
                 jp.array(act, dtype=jp.float32)
             )
-            print("NUMPY", numpy_MA, numpy_MR, numpy_MF)
-            print("JAX", jax_MA, jax_MR, jax_MF)
+
             np.testing.assert_allclose(
                 numpy_MA,
                 np.array(jax_MA),

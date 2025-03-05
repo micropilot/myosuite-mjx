@@ -264,14 +264,11 @@ class TestReferenceMotion(unittest.TestCase):
         )
 
         # Test interpolation
-        print("Testing interpolation")
         time = (jax_ref.reference["time"][1] + jax_ref.reference["time"][2]) / 2
         jax_ref_struct = jax_ref.get_reference(time)
         numpy_ref_struct = numpy_ref.get_reference(time)
 
         # Compare interpolated results
-        print("JAX robot", jax_ref_struct.robot)
-        print("NPY robot", numpy_ref_struct.robot)
         np.testing.assert_allclose(
             np.array(jax_ref_struct.robot),
             numpy_ref_struct.robot,

@@ -40,21 +40,21 @@ class EnvBaseMJX(PipelineEnv):
         self.low_action = jp.array(action_range[:, 0])
         self.high_action = jp.array(action_range[:, 1])
 
-        qpos = self.sys.qpos0   
-        qvel = jp.zeros(qpos.shape)
+        self.init_qpos = self.sys.qpos0
+        self.init_qvel = jp.zeros(self.init_qpos.shape)
 
-        reward, done, zero = jp.zeros(3)
-        pipeline_state = self.pipeline_init(qpos, qvel)
+        # reward, done, zero = jp.zeros(3)
+        # pipeline_state = self.pipeline_init(self.init_qpos, self.init_qvel)
         
-        state = State(
-            pipeline_state=pipeline_state, 
-            obs=None, 
-            reward=reward, 
-            done=done, 
-            metrics={},
-            info={}
-        )
-        state = self.step(state, jp.zeros(self.sys.nu))
+        # state = State(
+        #     pipeline_state=pipeline_state, 
+        #     obs=None, 
+        #     reward=reward, 
+        #     done=done, 
+        #     metrics={},
+        #     info={}
+        # )
+        # state = self.step(state, jp.zeros(self.sys.nu))
 
     def step(self, state: State, action: jax.Array) -> State:
         action = jp.clip(action, self.low_action, self.high_action)

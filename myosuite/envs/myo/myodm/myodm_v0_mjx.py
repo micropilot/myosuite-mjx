@@ -19,41 +19,10 @@ class TrackEnv(BaseV0):
         self,
         model_path: str,
         object_name: str,
-        reference: dict,
-        obs_keys: list = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"],
-        weighted_reward_keys: dict = {
-            "pose": 0.0,  # 1.0,
-            "object": 1.0,
-            "bonus": 1.0,
-            "penalty": -2,
-        },
-        motion_start_time: float = 0,
-        motion_extrapolation: bool = True,
-        terminate_obj_fail: bool = True,
-        terminate_pose_fail: bool = False,
+        frame_skip: int = 10,
         **kwargs
     ):
         # Load model and setup simulation
-        processed_model_path = self.__process_path(object_name, model_path)
-
-        super().__init__(
-            model_path=processed_model_path,
-            obs_keys=obs_keys,
-            weighted_reward_keys=weighted_reward_keys,
-            **kwargs 
-        )
-        # os.remove(processed_model_path)
-
-        self._load_reference_motion(
-            object_name,
-            reference,
-            motion_start_time,
-            motion_extrapolation,
-            terminate_obj_fail,
-            terminate_pose_fail,
-        )
-
-    def __process_path(self, object_name, model_path):
         # Load mj model and setup simulation
         curr_dir = os.path.dirname(os.path.abspath(__file__))
         self.object_name = object_name
@@ -69,17 +38,32 @@ class TrackEnv(BaseV0):
         with open(processed_model_path, "w") as file:
             file.write(processed_xml)
 
-        return processed_model_path
 
-    def _load_reference_motion(
+        super().__init__(
+            model_path=processed_model_path,
+            frame_skip=frame_skip,
+        )
+        os.remove(processed_model_path)
+
+        self._setup(**kwargs)
+
+    def _setup(
         self,
-        object_name,
-        reference,
-        motion_start_time,
-        motion_extrapolation,
-        terminate_obj_fail,
-        terminate_pose_fail,
+        reference: dict,
+        motion_start_time: float = 0,
+        motion_extrapolation: bool = True,
+        obs_keys: list = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"],
+        weighted_reward_keys: dict = {
+            "pose": 0.0,  # 1.0,
+            "object": 1.0,
+            "bonus": 1.0,
+            "penalty": -2,
+        },
+        terminate_obj_fail: bool = True,
+        terminate_pose_fail: bool = False,
+        **kwargs
     ):
+
         self.ref = ReferenceMotion(
             reference_data=reference,
             motion_extrapolation=motion_extrapolation,
@@ -116,7 +100,7 @@ class TrackEnv(BaseV0):
         ##########################################
 
         self.object_bid = mujoco.mj_name2id(
-            self.sys.mj_model, mujoco.mjtObj.mjOBJ_BODY, object_name
+            self.sys.mj_model, mujoco.mjtObj.mjOBJ_BODY, self.object_name
         )
         self.wrist_bid = mujoco.mj_name2id(
             self.sys.mj_model, 
@@ -131,12 +115,16 @@ class TrackEnv(BaseV0):
         pos = self.sys.mj_model.body_pos[self.object_bid]
         self.lift_z = (ipos + pos)[2] + self.lift_bonus_thresh
 
+        super()._setup(
+            obs_keys=obs_keys,
+            weighted_reward_keys=weighted_reward_keys,
+            **kwargs
+        )
+
         if not motion_extrapolation:
             self.spec.max_episode_steps = self.ref.horizon
 
         robot_init, object_init = self.ref.get_init()
-        self.init_qpos = self.sys.qpos0
-        self.init_qvel = jp.zeros(self.init_qpos.shape)
         if robot_init is not None:
             self.init_qpos = self.init_qpos.at[: self.ref.robot_dim].set(robot_init)
         if object_init is not None:
@@ -144,8 +132,6 @@ class TrackEnv(BaseV0):
                 self.ref.robot_dim : self.ref.robot_dim + 3
             ].set(object_init[:3])
             self.init_qpos = self.init_qpos.at[-3:].set(quat2euler(object_init[3:]))
-
-        data = self.pipeline_init(self.init_qpos, self.init_qvel)
 
     def reset(self, rng: jax.Array = None) -> State:
         self.ref.reset()
@@ -200,16 +186,22 @@ class TrackEnv(BaseV0):
         obj_reward = jp.exp(-self.obj_err_scale * (obj_com_err + 0.1 * obj_rot_err))
 
         # calculate lift bonus
-        lift_bonus = (tgt_obj_com[2] >= self.lift_z) and (obj_com[2] >= self.lift_z)
+        lift_bonus = jp.where(jp.logical_and(
+                jp.greater_equal(tgt_obj_com[2], self.lift_z),
+                jp.greater_equal(obj_com[2], self.lift_z)
+            ),
+            1.0,
+            0.0
+        )
 
         # calculate reward terms
         qpos_reward = jp.exp(
             -self.qpos_err_scale * self.norm2(info["hand_qpos_err"])
         )
-        qvel_reward = (
-            jp.array([0])
-            if info["hand_qvel_err"] is None
-            else jp.exp(-self.qvel_err_scale * self.norm2(info["hand_qvel_err"]))
+        qvel_reward = jp.where(
+            info["hand_qvel_err"] is None,
+            0.0,
+            jp.exp(-self.qvel_err_scale * self.norm2(info["hand_qvel_err"]))
         )
 
         # weight and sum individual reward terms
@@ -221,27 +213,31 @@ class TrackEnv(BaseV0):
 
         obj_term = jp.where(
             self.TermObj & (self.norm2(info["obj_com_err"]) >= self.obj_fail_thresh**2),
-            True,
-            False
+            1.0,
+            0.0
         )
         base_term = jp.where(
             self.TermObj & (self.norm2(info["base_error"]) >= self.base_fail_thresh**2),
-            True,
-            False
+            1.0,
+            0.0
         )
         qpos_term = jp.where(
             self.TermPose & (self.norm2(info["hand_qpos_err"]) >= self.qpos_fail_thresh),
-            True,
-            False
+            1.0,
+            0.0
         )
 
-        done = jp.logical_or(jp.logical_or(obj_term, qpos_term), base_term)
+        done = jp.where(
+            jp.logical_or(jp.logical_or(obj_term, qpos_term), base_term),
+            1.0,
+            0.0
+        )
         
         metrics = {
             "pose": pose_reward + vel_reward,
             "object": obj_reward + base_reward,
-            "bonus": self.lift_bonus_mag * float(lift_bonus),
-            "penalty": float(done),
+            "bonus": float(self.lift_bonus_mag) * lift_bonus,
+            "penalty": done,
         }
 
         reward = jp.sum(
