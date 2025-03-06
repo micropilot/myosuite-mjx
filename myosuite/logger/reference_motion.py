@@ -3,7 +3,6 @@ from typing import Union
 import collections
 import numpy as np
 import pickle
-import time as dtime
 
 # Time precision to use. Avoids rounding/resolution errors during comparisons
 _TIME_PRECISION = 4

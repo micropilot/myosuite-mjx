@@ -2,7 +2,6 @@ import unittest
 import numpy as np
 import jax
 import jax.numpy as jp
-import time 
 
 from myosuite.envs.myo.myodm.myodm_v0 import TrackEnv as MujocoTrackEnv
 from myosuite.envs.myo.myodm.myodm_v0_mjx import TrackEnv as JaxTrackEnv
@@ -58,7 +57,9 @@ class TestTrackEnv(unittest.TestCase):
         """Test that both implementations initialize similarly"""
         # Compare relevant attributes
         self.assertEqual(self.mujoco_env.object_name, self.jax_env.object_name)
-        self.assertEqual(self.mujoco_env.lift_bonus_thresh, self.jax_env.lift_bonus_thresh)
+        self.assertEqual(
+            self.mujoco_env.lift_bonus_thresh, self.jax_env.lift_bonus_thresh
+        )
         self.assertEqual(self.mujoco_env.obj_err_scale, self.jax_env.obj_err_scale)
 
     def test_reset(self):
@@ -110,7 +111,7 @@ class TestTrackEnv(unittest.TestCase):
         #     rtol=1e-5,
         #     err_msg="Object Com Err mismatch after reset",
         # )
-        
+
         # Compare action
         np.testing.assert_allclose(
             mujoco_obs[0][131:],
@@ -143,17 +144,16 @@ class TestTrackEnv(unittest.TestCase):
             jax_state = jit_step(jax_state, jp.array(action))
             # jax_state = self.jax_env.step(jax_state, jp.array(action))
 
-
             # Compare position
             position_diff_norm = np.linalg.norm(
                 mujoco_obs[:35] - np.array(jax_state.obs[:35])
             )
-            
+
             # Assert that the norm is below the threshold
             self.assertLessEqual(
                 position_diff_norm,
                 0.01,
-                "Position mismatch after reset: Norm of difference is too large"
+                "Position mismatch after reset: Norm of difference is too large",
             )
 
             # Compare velocity
@@ -163,7 +163,7 @@ class TestTrackEnv(unittest.TestCase):
             self.assertLessEqual(
                 velocity_diff_norm,
                 0.5,
-                "Velocity mismatch after reset: Norm of difference is too large"
+                "Velocity mismatch after reset: Norm of difference is too large",
             )
 
             # Compare hand qpos error
@@ -173,7 +173,7 @@ class TestTrackEnv(unittest.TestCase):
             self.assertLessEqual(
                 hand_qpos_err_diff_norm,
                 0.01,
-                "Hand Qpos Err mismatch after reset: Norm of difference is too large"
+                "Hand Qpos Err mismatch after reset: Norm of difference is too large",
             )
 
             # Compare hand qvel error
@@ -183,7 +183,7 @@ class TestTrackEnv(unittest.TestCase):
             self.assertLessEqual(
                 hand_qvel_err_diff_norm,
                 0.5,
-                "Hand Qvel Err mismatch after reset: Norm of difference is too large"
+                "Hand Qvel Err mismatch after reset: Norm of difference is too large",
             )
 
             # Compare object com error
@@ -193,7 +193,7 @@ class TestTrackEnv(unittest.TestCase):
             self.assertLessEqual(
                 object_com_err_diff_norm,
                 0.5,
-                "Object Com Err mismatch after reset: Norm of difference is too large"
+                "Object Com Err mismatch after reset: Norm of difference is too large",
             )
 
             # Compare action
@@ -203,7 +203,7 @@ class TestTrackEnv(unittest.TestCase):
             self.assertLessEqual(
                 action_diff_norm,
                 0.01,
-                "Action mismatch after reset: Norm of difference is too large"
+                "Action mismatch after reset: Norm of difference is too large",
             )
 
             # Compare rewards
@@ -226,16 +226,15 @@ class TestTrackEnv(unittest.TestCase):
         # Reset with same seed
         key = jax.random.PRNGKey(0)
 
-        mujoco_obs =self.mujoco_env.reset()
+        _ = self.mujoco_env.reset()
         jax_state = self.jax_env.reset(rng=key)
 
         # Test reward components
         mujoco_reward_dict = self.mujoco_env.get_reward_dict(
             self.mujoco_env.get_obs_dict(self.mujoco_env.sim)
         )
-        jax_reward, _, jax_metrics = self.jax_env.compute_reward(
-            jax_state.pipeline_state,
-            jax_state.info
+        _, _, jax_metrics = self.jax_env.compute_reward(
+            jax_state.pipeline_state, jax_state.info
         )
 
         # Compare reward components
@@ -244,4 +243,4 @@ class TestTrackEnv(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

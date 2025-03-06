@@ -5,7 +5,6 @@ from jax import numpy as jp
 import jax
 import jax.random as jrandom
 import pickle
-import time as dtime  # rename to avoid conflict with reference time
 
 # Time precision to use. Avoids rounding/resolution errors during comparisons
 _TIME_PRECISION = 4

@@ -203,9 +203,6 @@ class TestReferenceMotion(unittest.TestCase):
         jax_robot_init, jax_object_init = jax_ref.get_init()
         numpy_robot_init, numpy_object_init = numpy_ref.get_init()
 
-        # For random type, init should be mean of bounds
-        expected_robot_init = np.mean(self.random_ref_data["robot"], axis=0)  # noqa: F841
-
         np.testing.assert_allclose(
             np.array(jax_robot_init),
             numpy_robot_init,

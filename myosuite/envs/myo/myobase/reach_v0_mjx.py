@@ -3,19 +3,13 @@ import jax.numpy as jp
 import mujoco
 from brax import base
 from brax.envs.base import State
-from dataclasses import replace
 
 from myosuite.envs.myo.base_v0_mjx import BaseV0
 
 
 class ReachEnvV0(BaseV0):
 
-    def __init__(
-        self,
-        model_path: str,
-        frame_skip: int = 10,
-        **kwargs
-    ):
+    def __init__(self, model_path: str, frame_skip: int = 10, **kwargs):
         super().__init__(
             model_path=model_path,
             frame_skip=frame_skip,
@@ -24,16 +18,16 @@ class ReachEnvV0(BaseV0):
         self._setup(**kwargs)
 
     def _setup(
-            self,
-            target_reach_range: dict,
-            far_th: float = 0.35,
-            obs_keys: list = ["qpos", "qvel", "tip_pos", "reach_err"],
-            weighted_reward_keys: dict = {
-                "reach": 1.0,
-                "bonus": 4.0,
-                "penalty": 50,
-            },
-            **kwargs
+        self,
+        target_reach_range: dict,
+        far_th: float = 0.35,
+        obs_keys: list = ["qpos", "qvel", "tip_pos", "reach_err"],
+        weighted_reward_keys: dict = {
+            "reach": 1.0,
+            "bonus": 4.0,
+            "penalty": 50,
+        },
+        **kwargs
     ):
         self.far_th = far_th
         self.target_reach_range = target_reach_range
@@ -43,25 +37,20 @@ class ReachEnvV0(BaseV0):
             sites=self.target_reach_range.keys(),
             **kwargs
         )
-    
-    def get_info(
-            self,
-            pipeline_state: base.State
-        ) -> dict:
-        info ={}
+
+    def get_info(self, pipeline_state: base.State) -> dict:
+        info = {}
 
         info["tip_pos"] = pipeline_state.site_xpos[self.tip_sids]
-        info["target_pos"] = self.sys.mj_model.site_pos[self.target_sids] # This is different from mujoco version
+        info["target_pos"] = self.sys.mj_model.site_pos[
+            self.target_sids
+        ]  # This is different from mujoco version
 
         info["reach_err"] = info["target_pos"] - info["tip_pos"]
 
         return info
-    
-    def get_obs(
-        self, 
-        pipeline_state: base.State, 
-        info: dict
-    ) -> jax.Array:
+
+    def get_obs(self, pipeline_state: base.State, info: dict) -> jax.Array:
         position = pipeline_state.qpos
         velocity = pipeline_state.qvel * pipeline_state.time
         tip_pos = info["tip_pos"]
@@ -83,23 +72,25 @@ class ReachEnvV0(BaseV0):
             )
 
         return obs
-    
+
     def compute_reward(self, pipeline_state: base.State, info: dict) -> dict:
         reach_dist = jp.linalg.norm(info["reach_err"], axis=-1)[0]
 
-        # TODO: act_mag not implemented 
+        # TODO: act_mag not implemented
 
         far_th = jax.lax.cond(
             jp.squeeze(pipeline_state.time) > 2 * self.dt,
             lambda _: self.far_th * len(self.tip_sids),
             lambda _: jp.inf,
-            operand=None
+            operand=None,
         )
 
         near_th = len(self.tip_sids) * 0.0125
 
         # Convert boolean to float: 1.0 for True, 0.0 for False
-        done = jp.where(jp.logical_or(reach_dist > far_th, reach_dist < near_th), 1.0, 0.0)
+        done = jp.where(
+            jp.logical_or(reach_dist > far_th, reach_dist < near_th), 1.0, 0.0
+        )
 
         metrics = {
             "reach": -1.0 * reach_dist,
@@ -113,30 +104,21 @@ class ReachEnvV0(BaseV0):
         )
 
         return reward, done, metrics
-    
+
     def reset(self, rng: jax.Array = None) -> State:
         key, *subkey = jax.random.split(rng, len(self.target_reach_range.items()) + 1)
 
         # info = {}
         for idx, (site, span) in enumerate(self.target_reach_range.items()):
             sid = mujoco.mj_name2id(
-                        self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
-                    )
+                self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
+            )
 
             self.sys.mj_model.site_pos[sid] = jax.random.uniform(
-                subkey[idx], 
-                shape=span[0].shape, 
-                minval=self.target_reach_range[site][0], 
-                maxval=self.target_reach_range[site][1]
+                subkey[idx],
+                shape=span[0].shape,
+                minval=self.target_reach_range[site][0],
+                maxval=self.target_reach_range[site][1],
             )
-            
+
         return super().reset(key)
-
-        
-
-    
-
-
-    
-
-

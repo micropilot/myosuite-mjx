@@ -1,4 +1,4 @@
-import time 
+import time
 import jax
 import mujoco
 from mujoco import mjx
@@ -6,7 +6,9 @@ import mediapy
 
 
 # Load Mujoco Model
-mj_model = mujoco.MjModel.from_xml_path("myosuite/envs/myo/assets/hand/myohand_object_mjx1740458008.183464_processed.xml")
+mj_model = mujoco.MjModel.from_xml_path(
+    "myosuite/envs/myo/assets/hand/myohand_object_mjx1740458008.183464_processed.xml"
+)
 mj_data = mujoco.MjData(mj_model)
 mjx_model = mjx.put_model(mj_model)
 mjx_data = mjx.put_data(m=mj_model, d=mj_data)

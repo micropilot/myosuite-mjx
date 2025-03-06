@@ -5,7 +5,6 @@ import jax.numpy as jp
 import mujoco
 from brax import base
 from brax.envs.base import State
-from dataclasses import replace
 
 from myosuite.envs.myo.base_v0_mjx import BaseV0
 
@@ -16,11 +15,7 @@ from myosuite.utils.quat_math_jax import euler2quat, quat2euler, quatDiff2Vel, m
 class TrackEnv(BaseV0):
 
     def __init__(
-        self,
-        model_path: str,
-        object_name: str,
-        frame_skip: int = 10,
-        **kwargs
+        self, model_path: str, object_name: str, frame_skip: int = 10, **kwargs
     ):
         # Load model and setup simulation
         # Load mj model and setup simulation
@@ -37,7 +32,6 @@ class TrackEnv(BaseV0):
         )
         with open(processed_model_path, "w") as file:
             file.write(processed_xml)
-
 
         super().__init__(
             model_path=processed_model_path,
@@ -103,22 +97,20 @@ class TrackEnv(BaseV0):
             self.sys.mj_model, mujoco.mjtObj.mjOBJ_BODY, self.object_name
         )
         self.wrist_bid = mujoco.mj_name2id(
-            self.sys.mj_model, 
-            mujoco.mjtObj.mjOBJ_BODY, 
-            "lunate"
+            self.sys.mj_model, mujoco.mjtObj.mjOBJ_BODY, "lunate"
         )
 
         # Disable body skeleton rendering by setting transparency
-        self.sys.mj_model.geom_rgba[self.object_bid, 3] = 0.0  # Make all geoms invisible
+        self.sys.mj_model.geom_rgba[self.object_bid, 3] = (
+            0.0  # Make all geoms invisible
+        )
 
         ipos = self.sys.mj_model.body_ipos[self.object_bid]
         pos = self.sys.mj_model.body_pos[self.object_bid]
         self.lift_z = (ipos + pos)[2] + self.lift_bonus_thresh
 
         super()._setup(
-            obs_keys=obs_keys,
-            weighted_reward_keys=weighted_reward_keys,
-            **kwargs
+            obs_keys=obs_keys, weighted_reward_keys=weighted_reward_keys, **kwargs
         )
 
         if not motion_extrapolation:
@@ -145,17 +137,17 @@ class TrackEnv(BaseV0):
         info = self.get_info(pipeline_state)
         obs = self.get_obs(pipeline_state, info)
         metrics = {k: jp.array(zero) for k in self.weighted_reward_keys.keys()}
-        metrics['reward'] = reward
+        metrics["reward"] = reward
 
         state = State(
-            pipeline_state=pipeline_state, 
-            obs=obs, 
-            reward=reward, 
-            done=done, 
+            pipeline_state=pipeline_state,
+            obs=obs,
+            reward=reward,
+            done=done,
             metrics=metrics,
-            info=info
+            info=info,
         )
-        
+
         return state
 
     def norm2(self, x):
@@ -186,27 +178,26 @@ class TrackEnv(BaseV0):
         obj_reward = jp.exp(-self.obj_err_scale * (obj_com_err + 0.1 * obj_rot_err))
 
         # calculate lift bonus
-        lift_bonus = jp.where(jp.logical_and(
+        lift_bonus = jp.where(
+            jp.logical_and(
                 jp.greater_equal(tgt_obj_com[2], self.lift_z),
-                jp.greater_equal(obj_com[2], self.lift_z)
+                jp.greater_equal(obj_com[2], self.lift_z),
             ),
             1.0,
-            0.0
+            0.0,
         )
 
         # calculate reward terms
-        qpos_reward = jp.exp(
-            -self.qpos_err_scale * self.norm2(info["hand_qpos_err"])
-        )
+        qpos_reward = jp.exp(-self.qpos_err_scale * self.norm2(info["hand_qpos_err"]))
         qvel_reward = jp.where(
             info["hand_qvel_err"] is None,
             0.0,
-            jp.exp(-self.qvel_err_scale * self.norm2(info["hand_qvel_err"]))
+            jp.exp(-self.qvel_err_scale * self.norm2(info["hand_qvel_err"])),
         )
 
         # weight and sum individual reward terms
         pose_reward = self.qpos_reward_weight * qpos_reward
-        vel_reward = self.qvel_reward_weight * qvel_reward  
+        vel_reward = self.qvel_reward_weight * qvel_reward
 
         base_error = jp.sqrt(self.norm2(info["base_error"]))
         base_reward = jp.exp(-self.base_err_scale * base_error)
@@ -214,25 +205,24 @@ class TrackEnv(BaseV0):
         obj_term = jp.where(
             self.TermObj & (self.norm2(info["obj_com_err"]) >= self.obj_fail_thresh**2),
             1.0,
-            0.0
+            0.0,
         )
         base_term = jp.where(
             self.TermObj & (self.norm2(info["base_error"]) >= self.base_fail_thresh**2),
             1.0,
-            0.0
+            0.0,
         )
         qpos_term = jp.where(
-            self.TermPose & (self.norm2(info["hand_qpos_err"]) >= self.qpos_fail_thresh),
+            self.TermPose
+            & (self.norm2(info["hand_qpos_err"]) >= self.qpos_fail_thresh),
             1.0,
-            0.0
+            0.0,
         )
 
         done = jp.where(
-            jp.logical_or(jp.logical_or(obj_term, qpos_term), base_term),
-            1.0,
-            0.0
+            jp.logical_or(jp.logical_or(obj_term, qpos_term), base_term), 1.0, 0.0
         )
-        
+
         metrics = {
             "pose": pose_reward + vel_reward,
             "object": obj_reward + base_reward,
@@ -246,11 +236,7 @@ class TrackEnv(BaseV0):
 
         return reward, done, metrics
 
-    def get_obs(
-        self,
-        pipeline_state: base.State,
-        info: dict
-    ) -> jp.ndarray:
+    def get_obs(self, pipeline_state: base.State, info: dict) -> jp.ndarray:
         position = pipeline_state.qpos
         velocity = pipeline_state.qvel
         hand_qpos_err = info["hand_qpos_err"]
@@ -271,19 +257,16 @@ class TrackEnv(BaseV0):
         else:
             obs = jp.concatenate(
                 [
-                    position, 
-                    velocity, 
-                    hand_qpos_err.flatten(), 
-                    hand_qvel_err.flatten(), 
-                    obj_com_err.flatten()
+                    position,
+                    velocity,
+                    hand_qpos_err.flatten(),
+                    hand_qvel_err.flatten(),
+                    obj_com_err.flatten(),
                 ]
             )
         return obs
 
-    def get_info(
-        self,
-        pipeline_state: base.State
-    ) -> dict:
+    def get_info(self, pipeline_state: base.State) -> dict:
         curr_ref = self.ref.get_reference(pipeline_state.time + self.motion_start_time)
         # update reference in sim
         # qpos = pipeline_state.qpos
@@ -291,7 +274,7 @@ class TrackEnv(BaseV0):
         # qpos = qpos.at[:3].set(curr_ref.object[:3])
         # data = self.pipeline_init(qpos, pipeline_state.qvel)
         # jax.debug.print("MJX qpos after update{}", data.qpos)
-        
+
         info = {}
 
         # get current hand pose + vel
@@ -300,7 +283,9 @@ class TrackEnv(BaseV0):
 
         # get targets from reference object
         info["targ_hand_qpos"] = curr_ref.robot
-        info["targ_hand_qvel"] = jp.array([0]) if curr_ref.robot_vel is None else curr_ref.robot_vel
+        info["targ_hand_qvel"] = (
+            jp.array([0]) if curr_ref.robot_vel is None else curr_ref.robot_vel
+        )
 
         # get real values from physics object
         info["curr_obj_com"] = pipeline_state.xipos[self.object_bid].copy()
@@ -312,7 +297,7 @@ class TrackEnv(BaseV0):
 
         info["targ_obj_com"] = curr_ref.object[:3]
         info["targ_obj_rot"] = curr_ref.object[3:]
-        
+
         # Errors
         info["hand_qpos_err"] = info["curr_hand_qpos"] - info["targ_hand_qpos"]
         info["hand_qvel_err"] = (
@@ -324,7 +309,7 @@ class TrackEnv(BaseV0):
         info["obj_com_err"] = info["curr_obj_com"] - info["targ_obj_com"]
 
         return info
-    
+
 
 # jax.config.update("jax_platform_name", "cpu")
 

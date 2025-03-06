@@ -1,5 +1,5 @@
 from brax import base
-from brax.envs.base import PipelineEnv, State
+from brax.envs.base import State
 import jax
 from jax import numpy as jp
 import mujoco
@@ -18,7 +18,7 @@ class BaseV0(EnvBaseMJX):
         fatigue_reset_vec=None,
         fatigue_reset_random=False,
         **kwargs
-    ):  
+    ):
         if self.sys.na > 0 and "act" not in obs_keys:
             obs_keys = obs_keys.copy()
             obs_keys.append("act")
@@ -48,9 +48,7 @@ class BaseV0(EnvBaseMJX):
         self.initializeConditions()
 
         super()._setup(
-            obs_keys=obs_keys,
-            weighted_reward_keys=weighted_reward_keys,
-            **kwargs
+            obs_keys=obs_keys, weighted_reward_keys=weighted_reward_keys, **kwargs
         )
 
         # TODO: setup viewer later
@@ -80,11 +78,7 @@ class BaseV0(EnvBaseMJX):
                 self.sys.model, mujoco.mjtObj.mjOBJ_ACTUATOR, "EIP"
             )
 
-    def compute_reward(
-            self, 
-            pipeline_state: base.State,
-            info: dict
-        ) -> dict:
+    def compute_reward(self, pipeline_state: base.State, info: dict) -> dict:
         # implemented in task subclass
         raise NotImplementedError
 
@@ -117,25 +111,24 @@ class BaseV0(EnvBaseMJX):
         obs = self.get_obs(pipeline_state, info)
 
         reward, done, metrics = self.compute_reward(pipeline_state, info)
-        metrics['reward'] = reward
+        metrics["reward"] = reward
 
         state.metrics.update(**metrics)
 
         return state.replace(
-            pipeline_state=pipeline_state, 
-            obs=obs, 
-            reward=reward, 
+            pipeline_state=pipeline_state,
+            obs=obs,
+            reward=reward,
             done=done,
             metrics=metrics,
-            info=info
+            info=info,
         )
-        
 
     def reset(
-            self, 
-            rng: jax.Array = None, 
-            fatigue_reset: bool = True, 
-        ) -> State:
+        self,
+        rng: jax.Array = None,
+        fatigue_reset: bool = True,
+    ) -> State:
         if fatigue_reset:
             if self.muscle_condition == "fatigue":
                 self.muscle_fatigue.reset(
@@ -147,16 +140,8 @@ class BaseV0(EnvBaseMJX):
 
         return super().reset(rng)
 
-
-    def get_obs(
-            self, 
-            pipeline_state: base.State, 
-            info: dict
-        )-> jax.Array:
+    def get_obs(self, pipeline_state: base.State, info: dict) -> jax.Array:
         raise NotImplementedError
 
-    def get_info(
-            self,
-            pipeline_state: base.State
-        ) -> dict:
+    def get_info(self, pipeline_state: base.State) -> dict:
         raise NotImplementedError

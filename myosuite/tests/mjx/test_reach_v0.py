@@ -49,12 +49,12 @@ class TestReachV0(unittest.TestCase):
         )
 
         key = jax.random.PRNGKey(0)
-        jax_state = jax_env.reset(rng=key)
+        _ = jax_env.reset(rng=key)
 
         # Check that the sampled position is equal to the min (and max)
         np.testing.assert_allclose(
             jax_env.sys.mj_model.site_pos[jax_env.target_sids].flatten(),
-            np.array([0.2, 0.05, 0.20]), 
+            np.array([0.2, 0.05, 0.20]),
             rtol=1e-7,  # Relative tolerance
             atol=1e-9,  # Absolute tolerance
             err_msg="Sampled position does not match expected value when min and max are the same",
@@ -72,7 +72,7 @@ class TestReachV0(unittest.TestCase):
         )
 
         key = jax.random.PRNGKey(0)
-        jax_state = jax_env.reset(rng=key)
+        _ = jax_env.reset(rng=key)
 
         # Check that the sampled position is within the specified range
         sampled_pos = jax_env.sys.mj_model.site_pos[jax_env.target_sids].flatten()
@@ -193,8 +193,7 @@ class TestReachV0(unittest.TestCase):
             mujoco_env.get_obs_dict(mujoco_env.sim)
         )
         jax_reward, _, jax_metrics = jax_env.compute_reward(
-            jax_state.pipeline_state,
-            jax_state.info
+            jax_state.pipeline_state, jax_state.info
         )
 
         # Compare reward components
@@ -234,10 +233,7 @@ class TestReachV0(unittest.TestCase):
 
         # Verify observation components
         mujoco_obs_dict = mujoco_env.get_obs_dict(mujoco_env.sim)
-        jax_obs = jax_env.get_obs(
-            jax_state.pipeline_state,
-            jax_state.info
-        )
+        jax_obs = jax_env.get_obs(jax_state.pipeline_state, jax_state.info)
 
         # Compare each observation component
         start_idx = 0
