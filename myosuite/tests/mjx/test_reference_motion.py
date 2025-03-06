@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import glob
 
-from myosuite.mjx.reference_motion import ReferenceMotion as JaxReferenceMotion
+from myosuite.logger.reference_motion_jax import ReferenceMotion as JaxReferenceMotion
 from myosuite.logger.reference_motion import ReferenceMotion as NumpyReferenceMotion
 from myosuite.logger.reference_motion import ReferenceType
 
@@ -203,9 +203,6 @@ class TestReferenceMotion(unittest.TestCase):
         jax_robot_init, jax_object_init = jax_ref.get_init()
         numpy_robot_init, numpy_object_init = numpy_ref.get_init()
 
-        # For random type, init should be mean of bounds
-        expected_robot_init = np.mean(self.random_ref_data["robot"], axis=0)  # noqa: F841
-
         np.testing.assert_allclose(
             np.array(jax_robot_init),
             numpy_robot_init,
@@ -264,14 +261,11 @@ class TestReferenceMotion(unittest.TestCase):
         )
 
         # Test interpolation
-        print("Testing interpolation")
         time = (jax_ref.reference["time"][1] + jax_ref.reference["time"][2]) / 2
         jax_ref_struct = jax_ref.get_reference(time)
         numpy_ref_struct = numpy_ref.get_reference(time)
 
         # Compare interpolated results
-        print("JAX robot", jax_ref_struct.robot)
-        print("NPY robot", numpy_ref_struct.robot)
         np.testing.assert_allclose(
             np.array(jax_ref_struct.robot),
             numpy_ref_struct.robot,

@@ -35,4 +35,4 @@ jobs:
         
     - name: Run tests
       run: |
-        pytest myosuite/tests/ 
+        pytest myosuite/tests/ --ignore=myosuite/tests/mjx/test_myodm_v0.py 

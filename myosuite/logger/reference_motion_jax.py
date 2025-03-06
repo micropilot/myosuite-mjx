@@ -43,7 +43,6 @@ class ReferenceMotion:
             Random :: N==2, M==2  :: input is <Randomization range dict> :: ind0:low_limit, ind1:high_limit
             Track  :: N>2 or M>2  :: input as <Motion file to be tracked>
         """
-
         self.motion_extrapolation = motion_extrapolation
 
         # load reference
@@ -150,8 +149,8 @@ class ReferenceMotion:
         reference.setdefault(
             "object_init", reference["object"][0] if "object" in reference else None
         )
-        # print (type(reference['time']), type(reference['robot']), type(reference['object']))
-        return ReferenceStruct(
+
+        result = ReferenceStruct(
             time=jp.array(reference["time"]),
             robot=reference.get("robot"),
             robot_vel=reference.get("robot_vel"),
@@ -159,6 +158,8 @@ class ReferenceMotion:
             robot_init=reference["robot_init"],
             object_init=reference["object_init"],
         )._asdict()
+
+        return result
 
     def find_timeslot_in_reference(self, time):
         """
@@ -175,7 +176,6 @@ class ReferenceMotion:
 
         # search locally for index
         if time == self.reference["time"][self.index_cache]:
-            # print(f"curr match: {time}")
             return (self.index_cache, self.index_cache)
 
         elif self.index_cache < (self.horizon - 1):
@@ -188,7 +188,6 @@ class ReferenceMotion:
                 time > self.reference["time"][self.index_cache]
                 and time < self.reference["time"][self.index_cache + 1]
             ):
-                # print(f"interval match: {time}")
                 return (self.index_cache, self.index_cache + 1)
             else:
                 print(
@@ -214,7 +213,9 @@ class ReferenceMotion:
 
     def get_init(self):
         """Return the initial posture of the robot and the object."""
-        return self.reference["robot_init"], self.reference["object_init"]
+        result = self.reference["robot_init"], self.reference["object_init"]
+
+        return result
 
     def get_reference(self, time):
         """
@@ -226,7 +227,6 @@ class ReferenceMotion:
             object_ref = self.reference["object"][0]
         elif self.type == ReferenceType.RANDOM:
             rng_key, rng1, rng2 = jrandom.split(jax.random.PRNGKey(0), 3)
-            # print ("Before", type(self.reference['robot']), type(self.reference['robot_vel']), type(self.reference['object']))
             robot_ref = jrandom.uniform(
                 rng1,
                 shape=self.reference["robot"][
@@ -313,10 +313,3 @@ class ReferenceMotion:
 
     def __repr__(self) -> str:
         return repr(self.reference)
-
-
-# ref = ReferenceMotion(reference_data="myosuite/envs/myo/myodm/data/MyoHand_airplane_fly1.npz")
-# print ('horizon:', ref.horizon)
-# robot_init, object_init = ref.get_init()
-# print ('robot_init:', robot_init)
-# print ('object_init:', object_init)

@@ -24,7 +24,7 @@ from myosuite.utils.quat_math import (
     rotVecQuat as np_rotVecQuat,
     quat2euler_intrinsic as np_quat2euler_intrinsic,
 )
-from myosuite.mjx.quat_math import (
+from myosuite.utils.quat_math_jax import (
     mulQuat as jax_mulQuat,
     negQuat as jax_negQuat,
     quat2Vel as jax_quat2Vel,

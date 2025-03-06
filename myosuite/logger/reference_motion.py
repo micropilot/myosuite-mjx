@@ -134,7 +134,6 @@ class ReferenceMotion:
         """
         Load reference motion
         """
-
         # Load data
         if isinstance(reference_data, str):
             if reference_data.split(".")[-1] == "npz":
@@ -174,6 +173,7 @@ class ReferenceMotion:
             robot_init=reference["robot_init"],
             object_init=reference["object_init"],
         )
+
         return ref._asdict()
 
     def find_timeslot_in_reference(self, time):
@@ -184,7 +184,6 @@ class ReferenceMotion:
                 - where reference['time'][ind_prev] <= time <= reference['time'][ind_next]
                 - ind_prev == ind_next if exact time is found in reference['time']
         """
-
         time = np.around(time, _TIME_PRECISION)  # round to help with comparisons
         if self.type == ReferenceType.FIXED:
             return (0, 0)
@@ -197,7 +196,6 @@ class ReferenceMotion:
 
         # search locally for index
         if time == self.reference["time"][self.index_cache]:
-            # print(f"curr match: {time}")
             return (self.index_cache, self.index_cache)
 
         elif self.index_cache < (self.horizon - 1):
@@ -210,7 +208,6 @@ class ReferenceMotion:
                 time > self.reference["time"][self.index_cache]
                 and time < self.reference["time"][self.index_cache + 1]
             ):
-                # print(f"interval match: {time}")
                 return (self.index_cache, self.index_cache + 1)
             else:
                 print(
@@ -241,7 +238,8 @@ class ReferenceMotion:
         """
         return the initial posture of the robot and the object
         """
-        return self.reference["robot_init"], self.reference["object_init"]
+        result = self.reference["robot_init"], self.reference["object_init"]
+        return result
 
     def get_reference(self, time):  # noqa: C901
         """

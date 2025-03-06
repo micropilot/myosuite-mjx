@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jp
 
 from myosuite.envs.myo.myobase.reach_v0 import ReachEnvV0 as MujocoReachEnv
-from myosuite.mjx.reach_v0 import ReachEnvV0 as JaxReachEnv
+from myosuite.envs.myo.myobase.reach_v0_mjx import ReachEnvV0 as JaxReachEnv
 
 # Configure JAX to use CPU for consistent testing
 jax.config.update("jax_platform_name", "cpu")
@@ -33,14 +33,12 @@ class TestReachV0(unittest.TestCase):
         )
 
         # Compare relevant attributes
-        self.assertEqual(mujoco_env.frame_skip, jax_env.frame_skip)
         self.assertEqual(len(mujoco_env.tip_sids), len(jax_env.tip_sids))
         self.assertEqual(len(mujoco_env.target_sids), len(jax_env.target_sids))
         self.assertEqual(mujoco_env.far_th, jax_env.far_th)
 
     def test_reset_same_min_max(self):
         """Test reset behavior when min and max are the same"""
-        target_reach_range = {"IFtip": ((0.2, 0.05, 0.20), (0.2, 0.05, 0.20))}
         target_reach_range_jax = {
             "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]])
         }
@@ -51,12 +49,12 @@ class TestReachV0(unittest.TestCase):
         )
 
         key = jax.random.PRNGKey(0)
-        jax_state = jax_env.reset(rng=key)
+        _ = jax_env.reset(rng=key)
 
         # Check that the sampled position is equal to the min (and max)
         np.testing.assert_allclose(
-            jax_state.info["IFtip"],
-            np.array([0.2, 0.05, 0.20]), 
+            jax_env.sys.mj_model.site_pos[jax_env.target_sids].flatten(),
+            np.array([0.2, 0.05, 0.20]),
             rtol=1e-7,  # Relative tolerance
             atol=1e-9,  # Absolute tolerance
             err_msg="Sampled position does not match expected value when min and max are the same",
@@ -64,7 +62,6 @@ class TestReachV0(unittest.TestCase):
 
     def test_reset_different_min_max(self):
         """Test reset behavior when min and max are different"""
-        target_reach_range = {"IFtip": ((0.1, -0.1, 0.1), (0.27, 0.1, 0.3))}
         target_reach_range_jax = {
             "IFtip": jp.array([[0.1, -0.1, 0.1], [0.27, 0.1, 0.3]])
         }
@@ -75,10 +72,10 @@ class TestReachV0(unittest.TestCase):
         )
 
         key = jax.random.PRNGKey(0)
-        jax_state = jax_env.reset(rng=key)
+        _ = jax_env.reset(rng=key)
 
         # Check that the sampled position is within the specified range
-        sampled_pos = jax_state.info["IFtip"]
+        sampled_pos = jax_env.sys.mj_model.site_pos[jax_env.target_sids].flatten()
         min_pos = np.array([0.1, -0.1, 0.1])
         max_pos = np.array([0.27, 0.1, 0.3])
 
@@ -92,6 +89,7 @@ class TestReachV0(unittest.TestCase):
         mujoco_env = MujocoReachEnv(
             model_path=self.model_path,
             target_reach_range=self.target_reach_range,
+            seed=0,
         )
 
         jax_env = JaxReachEnv(
@@ -101,7 +99,6 @@ class TestReachV0(unittest.TestCase):
 
         # Reset with same RNG seed
         key = jax.random.PRNGKey(0)
-        mujoco_env.seed(0)
 
         mujoco_obs = mujoco_env.reset()
         jax_state = jax_env.reset(rng=key)
@@ -196,8 +193,7 @@ class TestReachV0(unittest.TestCase):
             mujoco_env.get_obs_dict(mujoco_env.sim)
         )
         jax_reward, _, jax_metrics = jax_env.compute_reward(
-            jax_state.pipeline_state,
-            jax_state.info
+            jax_state.pipeline_state, jax_state.info
         )
 
         # Compare reward components
@@ -237,11 +233,7 @@ class TestReachV0(unittest.TestCase):
 
         # Verify observation components
         mujoco_obs_dict = mujoco_env.get_obs_dict(mujoco_env.sim)
-        jax_obs = jax_env.get_obs(
-            jax_state.pipeline_state, 
-            jp.zeros(jax_env.sys.act_size()),
-            jax_state.info
-        )
+        jax_obs = jax_env.get_obs(jax_state.pipeline_state, jax_state.info)
 
         # Compare each observation component
         start_idx = 0

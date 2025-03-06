@@ -6,7 +6,7 @@ import mujoco
 from jax import tree_util
 
 from myosuite.envs.myo.fatigue import CumulativeFatigue as NumpyCumulativeFatigue
-from myosuite.mjx.fatigue import CumulativeFatigue as JaxCumulativeFatigue
+from myosuite.envs.myo.fatigue_jax import CumulativeFatigue as JaxCumulativeFatigue
 
 # Configure JAX to use CPU for consistent testing
 jax.config.update("jax_platform_name", "cpu")
@@ -166,8 +166,7 @@ class TestFatigue(unittest.TestCase):
             jax_MA, jax_MR, jax_MF = jax_fatigue.compute_act(
                 jp.array(act, dtype=jp.float32)
             )
-            print("NUMPY", numpy_MA, numpy_MR, numpy_MF)
-            print("JAX", jax_MA, jax_MR, jax_MF)
+
             np.testing.assert_allclose(
                 numpy_MA,
                 np.array(jax_MA),

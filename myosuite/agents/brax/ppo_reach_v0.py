@@ -9,13 +9,13 @@ from jax import numpy as jp
 from brax import envs
 from brax.training.agents.ppo import train as ppo
 
-from myosuite.mjx.reach_v0 import ReachEnvV0
+from myosuite.envs.myo.myobase.reach_v0_mjx import ReachEnvV0
 
 
 model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
 # target_reach_range = {
-        #     "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]]),
-        # }
+#     "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]]),
+# }
 
 # Time spent: 0:00:01.639262
 # Progress at step 3112960:
@@ -42,9 +42,8 @@ model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
 # time to train: 0:00:52.407653
 
 target_reach_range = {
-            "IFtip": jp.array([[0.1, -0.1, 0.1], 
-                               [0.27, 0.1, 0.3]]),
-        }
+    "IFtip": jp.array([[0.1, -0.1, 0.1], [0.27, 0.1, 0.3]]),
+}
 
 # Time spent: 0:00:01.640582
 # Progress at step 3112960:
@@ -70,12 +69,12 @@ target_reach_range = {
 # time to jit: 0:00:39.094683
 # time to train: 0:00:52.380446
 
-envs.register_environment('reach_v0', ReachEnvV0)
+envs.register_environment("reach_v0", ReachEnvV0)
 
-env_name = 'reach_v0'
-env = envs.get_environment(env_name, 
-                           model_path=model_path,
-                           target_reach_range=target_reach_range)
+env_name = "reach_v0"
+env = envs.get_environment(
+    env_name, model_path=model_path, target_reach_range=target_reach_range
+)
 
 
 times = [datetime.now()]
@@ -92,21 +91,21 @@ def progress(num_steps, metrics):
 
 train_fn = functools.partial(
     ppo.train,
-    num_timesteps=2_000_000, 
-    num_evals=20, 
-    reward_scaling=1, 
-    episode_length=32, 
-    normalize_observations=True, 
-    action_repeat=1, 
-    unroll_length=5, 
-    num_minibatches=32, 
-    num_updates_per_batch=4, 
-    discounting=0.97, 
-    learning_rate=3e-4, 
-    entropy_cost=1e-2, 
-    num_envs=2048, 
-    batch_size=1024, 
-    seed=1
+    num_timesteps=2_000_000,
+    num_evals=20,
+    reward_scaling=1,
+    episode_length=32,
+    normalize_observations=True,
+    action_repeat=1,
+    unroll_length=5,
+    num_minibatches=32,
+    num_updates_per_batch=4,
+    discounting=0.97,
+    learning_rate=3e-4,
+    entropy_cost=1e-2,
+    num_envs=2048,
+    batch_size=1024,
+    seed=1,
 )
 
 
