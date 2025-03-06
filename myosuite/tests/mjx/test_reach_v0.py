@@ -49,11 +49,11 @@ class TestReachV0(unittest.TestCase):
         )
 
         key = jax.random.PRNGKey(0)
-        _ = jax_env.reset(rng=key)
+        jax_state = jax_env.reset(rng=key)
 
         # Check that the sampled position is equal to the min (and max)
         np.testing.assert_allclose(
-            jax_env.sys.mj_model.site_pos[jax_env.target_sids].flatten(),
+            jax_state.info["target_pos"],
             np.array([0.2, 0.05, 0.20]),
             rtol=1e-7,  # Relative tolerance
             atol=1e-9,  # Absolute tolerance
@@ -72,10 +72,10 @@ class TestReachV0(unittest.TestCase):
         )
 
         key = jax.random.PRNGKey(0)
-        _ = jax_env.reset(rng=key)
+        jax_state = jax_env.reset(rng=key)
 
         # Check that the sampled position is within the specified range
-        sampled_pos = jax_env.sys.mj_model.site_pos[jax_env.target_sids].flatten()
+        sampled_pos = jax_state.info["target_pos"]
         min_pos = np.array([0.1, -0.1, 0.1])
         max_pos = np.array([0.27, 0.1, 0.3])
 

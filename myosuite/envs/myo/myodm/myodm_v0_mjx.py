@@ -127,14 +127,14 @@ class TrackEnv(BaseV0):
 
     def reset(self, rng: jax.Array = None) -> State:
         self.ref.reset()
-        super().reset(rng)
+        super().reset(rng, info={})
         key, subkey = jax.random.split(rng)
 
         # qpos and qvel contain both hand and object pose and vel
         reward, done, zero = jp.zeros(3)
         pipeline_state = self.pipeline_init(self.init_qpos, self.init_qvel)
 
-        info = self.get_info(pipeline_state)
+        info = self.get_info(pipeline_state, {})
         obs = self.get_obs(pipeline_state, info)
         metrics = {k: jp.array(zero) for k in self.weighted_reward_keys.keys()}
         metrics["reward"] = reward
@@ -266,7 +266,7 @@ class TrackEnv(BaseV0):
             )
         return obs
 
-    def get_info(self, pipeline_state: base.State) -> dict:
+    def get_info(self, pipeline_state: base.State, info: dict) -> dict:
         curr_ref = self.ref.get_reference(pipeline_state.time + self.motion_start_time)
         # update reference in sim
         # qpos = pipeline_state.qpos
@@ -274,8 +274,6 @@ class TrackEnv(BaseV0):
         # qpos = qpos.at[:3].set(curr_ref.object[:3])
         # data = self.pipeline_init(qpos, pipeline_state.qvel)
         # jax.debug.print("MJX qpos after update{}", data.qpos)
-
-        info = {}
 
         # get current hand pose + vel
         info["curr_hand_qpos"] = pipeline_state.q[:-6].copy()

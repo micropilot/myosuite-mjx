@@ -159,3 +159,12 @@ class ReachEnvV0(BaseV0):
         self.robot.sync_sims(self.sim, self.sim_obsd)
         obs = super().reset(**kwargs)
         return obs
+
+
+if __name__ == "__main__":
+    model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
+    target_reach_range = {
+            "IFtip": ([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]])
+        }
+    env = ReachEnvV0(model_path=model_path, target_reach_range=target_reach_range)
+    state = env.reset(rng=np.random.RandomState(0))

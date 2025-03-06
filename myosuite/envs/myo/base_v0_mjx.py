@@ -107,7 +107,7 @@ class BaseV0(EnvBaseMJX):
             action[self.EIPpos] = 0
 
         pipeline_state = self.pipeline_step(state.pipeline_state, action)
-        info = self.get_info(pipeline_state)
+        info = self.get_info(pipeline_state, state.info)
         obs = self.get_obs(pipeline_state, info)
 
         reward, done, metrics = self.compute_reward(pipeline_state, info)
@@ -128,6 +128,7 @@ class BaseV0(EnvBaseMJX):
         self,
         rng: jax.Array = None,
         fatigue_reset: bool = True,
+        info: dict = {},
     ) -> State:
         if fatigue_reset:
             if self.muscle_condition == "fatigue":
@@ -138,7 +139,7 @@ class BaseV0(EnvBaseMJX):
             else:
                 pass
 
-        return super().reset(rng)
+        return super().reset(rng, info=info)
 
     def get_obs(self, pipeline_state: base.State, info: dict) -> jax.Array:
         raise NotImplementedError

@@ -38,14 +38,11 @@ class ReachEnvV0(BaseV0):
             **kwargs
         )
 
-    def get_info(self, pipeline_state: base.State) -> dict:
-        info = {}
+    def get_info(self, pipeline_state: base.State, info: dict) -> dict:
 
         info["tip_pos"] = pipeline_state.site_xpos[self.tip_sids]
-        info["target_pos"] = self.sys.mj_model.site_pos[
-            self.target_sids
-        ]  # This is different from mujoco version
-
+        if "target_pos" not in info:
+            info["target_pos"] = pipeline_state.site_xpos[self.target_sids]
         info["reach_err"] = info["target_pos"] - info["tip_pos"]
 
         return info
@@ -108,17 +105,33 @@ class ReachEnvV0(BaseV0):
     def reset(self, rng: jax.Array = None) -> State:
         key, *subkey = jax.random.split(rng, len(self.target_reach_range.items()) + 1)
 
-        # info = {}
+        # We cannot update mj_model.site or sys.site_pos with brax. 
+        # So we first get the state reset and then
+        target_pos = []
         for idx, (site, span) in enumerate(self.target_reach_range.items()):
             sid = mujoco.mj_name2id(
                 self.sys.mj_model, mujoco.mjtObj.mjOBJ_SITE, site + "_target"
             )
 
-            self.sys.mj_model.site_pos[sid] = jax.random.uniform(
+            target_pos.append(jax.random.uniform(
                 subkey[idx],
                 shape=span[0].shape,
                 minval=self.target_reach_range[site][0],
                 maxval=self.target_reach_range[site][1],
-            )
+            ))
 
-        return super().reset(key)
+        info = {"target_pos": jp.concatenate(target_pos)}
+
+        return super().reset(key, info=info)
+
+
+if __name__ == "__main__":
+    model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
+    target_reach_range_jax = {
+            "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]])
+        }
+    env = ReachEnvV0(
+        model_path=model_path, 
+        target_reach_range=target_reach_range_jax
+    )
+    state = env.reset(rng=jax.random.PRNGKey(0))

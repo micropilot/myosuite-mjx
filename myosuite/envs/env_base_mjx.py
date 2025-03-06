@@ -59,7 +59,7 @@ class EnvBaseMJX(PipelineEnv):
         action = jp.clip(action, self.low_action, self.high_action)
 
         pipeline_state = self.pipeline_step(state.pipeline_state, action)
-        info = self.get_info(pipeline_state)
+        info = self.get_info(pipeline_state, state.info)
         obs = self.get_obs(pipeline_state, info)
 
         reward, done, metrics = self.compute_reward(pipeline_state, info)
@@ -76,14 +76,11 @@ class EnvBaseMJX(PipelineEnv):
             info=info,
         )
 
-    def reset(self, rng: jax.Array = None) -> State:
-        qpos = self.sys.qpos0
-        qvel = jp.zeros(qpos.shape)
-
+    def reset(self, rng: jax.Array = None, info: dict = {}) -> State:
         reward, done, zero = jp.zeros(3)
-        pipeline_state = self.pipeline_init(qpos, qvel)
+        pipeline_state = self.pipeline_init(self.init_qpos, self.init_qvel)
 
-        info = self.get_info(pipeline_state)
+        info = self.get_info(pipeline_state, info)
         obs = self.get_obs(pipeline_state, info)
         metrics = {k: jp.array(zero) for k in self.weighted_reward_keys.keys()}
         metrics["reward"] = reward
