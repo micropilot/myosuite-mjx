@@ -127,7 +127,7 @@ make_inference_fn, params, _ = train_fn(environment=env, progress_fn=progress)
 print(f"time to jit: {times[1] - times[0]}")
 print(f"time to train: {times[-1] - times[1]}")
 
-if not os.path.exists("policies/brax"):
-    os.makedirs("policies/brax", exist_ok=True)
+if not os.path.exists("policies"):
+    os.makedirs("policies", exist_ok=True)
 
 model.save_params('policies/brax', params)
