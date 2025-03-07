@@ -2,6 +2,7 @@ import os
 
 os.environ["JAX_CHECK_TRACER_LEAKS"] = "true"
 import functools
+import wandb 
 
 from datetime import datetime
 from jax import numpy as jp
@@ -90,24 +91,33 @@ def progress(num_steps, metrics):
         print(f"  {key}: {value}")
 
 
-train_fn = functools.partial(
-    ppo.train,
-    num_timesteps=2_000_000,
-    num_evals=20,
-    reward_scaling=1,
-    episode_length=32,
-    normalize_observations=True,
-    action_repeat=1,
-    unroll_length=5,
-    num_minibatches=32,
-    num_updates_per_batch=4,
-    discounting=0.97,
-    learning_rate=3e-4,
-    entropy_cost=1e-2,
-    num_envs=2048,
-    batch_size=1024,
-    seed=1,
+# Define a configuration dictionary
+config = {
+    "num_timesteps": 2_000_000,
+    "num_evals": 20,
+    "reward_scaling": 1,
+    "episode_length": 32,
+    "normalize_observations": True,
+    "action_repeat": 1,
+    "unroll_length": 5,
+    "num_minibatches": 32,
+    "num_updates_per_batch": 4,
+    "discounting": 0.97,
+    "learning_rate": 3e-4,
+    "entropy_cost": 1e-2,
+    "num_envs": 2048,
+    "batch_size": 1024,
+    "seed": 1,
+}
+
+run = wandb.init(
+    project="myoFingerReachRandom-V0",
+    config=config,
+    name="brax_ppo_reach_random_v0",
 )
+
+# Use the config dictionary in functools.partial
+train_fn = functools.partial(ppo.train, **config)
 
 
 make_inference_fn, params, _ = train_fn(environment=env, progress_fn=progress)
