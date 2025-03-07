@@ -90,7 +90,7 @@ def progress(num_steps, metrics):
     for key, value in metrics.items():
         print(f"  {key}: {value}")
 
-    wandb.log(step=num_steps, **metrics)
+    wandb.log(step=num_steps, data=metrics)
 
 
 # Define a configuration dictionary
