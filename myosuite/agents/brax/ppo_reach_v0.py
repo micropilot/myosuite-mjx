@@ -99,7 +99,7 @@ def progress(num_steps, metrics):
 # Define a configuration dictionary
 config = {
     "num_timesteps": 1e9,
-    "num_evals": 1e6,
+    "num_evals": 1e3,
     "reward_scaling": 1,
     "episode_length": 32,
     "normalize_observations": True,
