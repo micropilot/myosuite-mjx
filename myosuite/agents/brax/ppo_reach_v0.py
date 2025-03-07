@@ -7,6 +7,7 @@ from datetime import datetime
 from jax import numpy as jp
 
 from brax import envs
+from brax.io import model
 from brax.training.agents.ppo import train as ppo
 
 from myosuite.envs.myo.myobase.reach_v0_mjx import ReachEnvV0
@@ -113,3 +114,6 @@ make_inference_fn, params, _ = train_fn(environment=env, progress_fn=progress)
 
 print(f"time to jit: {times[1] - times[0]}")
 print(f"time to train: {times[-1] - times[1]}")
+
+
+model.save_params('policies/brax', params)
