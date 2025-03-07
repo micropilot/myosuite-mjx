@@ -82,18 +82,18 @@ env = envs.get_environment(
 
 print (env.action_size)
 
-# times = [datetime.now()]
+times = [datetime.now()]
 
 
-# def progress(num_steps, metrics):
-#     times.append(datetime.now())
-#     print(f"Time spent: {times[-1] - times[-2]}")
-#     print(f"Progress at step {num_steps}:")
-#     print("Metrics:")
-#     for key, value in metrics.items():
-#         print(f"  {key}: {value}")
+def progress(num_steps, metrics):
+    times.append(datetime.now())
+    print(f"Time spent: {times[-1] - times[-2]}")
+    print(f"Progress at step {num_steps}:")
+    print("Metrics:")
+    for key, value in metrics.items():
+        print(f"  {key}: {value}")
 
-#     wandb.log(step=num_steps, data=metrics)
+    wandb.log(step=num_steps, data=metrics)
 
 
 # Define a configuration dictionary
@@ -115,54 +115,22 @@ config = {
     "seed": 1,
 }
 
-# run = wandb.init(
-#     project="myoFingerReachRandom-V0",
-#     config=config,
-#     name="brax_ppo_reach_random_v0",
-# )
+run = wandb.init(
+    project="myoFingerReachRandom-V0",
+    config=config,
+    name="brax_ppo_reach_random_v0",
+)
 
 # Use the config dictionary in functools.partial
-# train_fn = functools.partial(ppo.train, **config)
+train_fn = functools.partial(ppo.train, **config)
 
 
-# make_inference_fn, params, _ = train_fn(environment=env, progress_fn=progress)
+make_inference_fn, params, _ = train_fn(environment=env, progress_fn=progress)
 
-# print(f"time to jit: {times[1] - times[0]}")
-# print(f"time to train: {times[-1] - times[1]}")
+print(f"time to jit: {times[1] - times[0]}")
+print(f"time to train: {times[-1] - times[1]}")
 
-# if not os.path.exists("policies"):
-#     os.makedirs("policies", exist_ok=True)
+if not os.path.exists("policies"):
+    os.makedirs("policies", exist_ok=True)
 
-# model.save_params('policies/brax', params)
-
-
-# Load Policies and Test
-paramsTEST = model.load_params('policies/brax')
-print ("Model loaded")
-
-ppoTEST = ppo.ppo_networks.make_ppo_networks(
-  action_size=env.action_size, 
-  observation_size=env.observation_size
-)
-make_inference = ppo.ppo_networks.make_inference_fn(ppoTEST)
-inference_fnTEST = make_inference(paramsTEST)
-
-# jit_env_reset = jax.jit(env.reset)
-# jit_env_step = jax.jit(env.step)
-# jit_inference_fn = jax.jit(inference_fnTEST)
-
-print ("Inference function made")
-rollout = []
-rng = jax.random.PRNGKey(seed=1)
-# state = jit_env_reset(rng=rng)
-state = env.reset(rng=rng)
-for _ in range(20):
-    rollout.append(state.pipeline_state)
-    act_rng, rng = jax.random.split(rng)
-    #   act, _ = jit_inference_fn(state.obs, act_rng)
-    #   state = jit_env_step(state, act)
-    act, _ = inference_fnTEST(state.obs, act_rng)
-    state = env.step(state, act)
-    print (state.metrics['reward'])
-
-media.show_video(env.render(rollout, camera='track'), fps=1.0 / env.dt)
+model.save_params('policies/brax', params)
