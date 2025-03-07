@@ -160,4 +160,4 @@ class MJRenderer(Renderer):
         if self._window:
             self._window.close()
             self._window = None
-            quit()
+            # quit()
