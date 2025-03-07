@@ -16,3 +16,4 @@ brax
 torch
 tensorboard
 stable-baselines3
+wandb
