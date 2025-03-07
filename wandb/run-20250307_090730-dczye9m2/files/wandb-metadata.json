@@ -1,0 +1,42 @@
+{
+  "os": "Linux-6.8.0-52-generic-x86_64-with-glibc2.35",
+  "python": "CPython 3.10.16",
+  "startedAt": "2025-03-07T08:07:30.733755Z",
+  "program": "/home/kavya/myosuite-mjx/myosuite/agents/brax/ppo_reach_v0.py",
+  "codePath": "myosuite/agents/brax/ppo_reach_v0.py",
+  "git": {
+    "remote": "https://github.com/micropilot/myosuite-mjx",
+    "commit": "d780535c0fdf6b39a8f744504ed5c3c418738f36"
+  },
+  "email": "sagar@granular.ai",
+  "root": "/home/kavya/myosuite-mjx",
+  "host": "watson",
+  "executable": "/home/kavya/miniconda3/envs/myosuite/bin/python",
+  "codePathLocal": "myosuite/agents/brax/ppo_reach_v0.py",
+  "cpu_count": 20,
+  "cpu_count_logical": 28,
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "491008999424",
+      "used": "418298830848"
+    }
+  },
+  "memory": {
+    "total": "67242524672"
+  },
+  "cpu": {
+    "count": 20,
+    "countLogical": 28
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 4090",
+      "memoryTotal": "25757220864",
+      "cudaCores": 16384,
+      "architecture": "Ada"
+    }
+  ],
+  "cudaVersion": "12.2"
+}

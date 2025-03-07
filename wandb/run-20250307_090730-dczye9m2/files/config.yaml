@@ -1,0 +1,56 @@
+_wandb:
+    value:
+        cli_version: 0.19.8
+        code_path: code/myosuite/agents/brax/ppo_reach_v0.py
+        m: []
+        python_version: 3.10.16
+        t:
+            "1":
+                - 12
+                - 45
+                - 55
+            "2":
+                - 12
+                - 45
+                - 55
+            "3":
+                - 13
+                - 16
+                - 23
+                - 55
+            "4": 3.10.16
+            "5": 0.19.8
+            "8":
+                - 5
+            "12": 0.19.8
+            "13": linux-x86_64
+action_repeat:
+    value: 1
+batch_size:
+    value: 1024
+discounting:
+    value: 0.97
+entropy_cost:
+    value: 0.01
+episode_length:
+    value: 32
+learning_rate:
+    value: 0.0003
+normalize_observations:
+    value: true
+num_envs:
+    value: 2048
+num_evals:
+    value: 20
+num_minibatches:
+    value: 32
+num_timesteps:
+    value: 2000000
+num_updates_per_batch:
+    value: 4
+reward_scaling:
+    value: 1
+seed:
+    value: 1
+unroll_length:
+    value: 5
