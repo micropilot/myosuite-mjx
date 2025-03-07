@@ -10,6 +10,7 @@ from myosuite.agents.brax.flax_to_torch import (
 
 params = model.load_params('policies/brax')
 model = TorchModel(params)
+model.eval()
 
 env = gym.make('myoFingerReachRandom-v0').unwrapped
 print (env.action_space)
@@ -17,7 +18,7 @@ print (env.action_space)
 state, _ = env.reset()
 print("State:", state)
 
-for _ in range(100):
+for _ in range(32):
     state = torch.tensor(state, dtype=torch.float32)
     action = model(state)
     action = action.detach().numpy()
@@ -25,6 +26,8 @@ for _ in range(100):
     env.mj_render()
     time.sleep(0.01)
     print (rew, done)
+    if done:
+        break
 
     
 
