@@ -16,6 +16,8 @@ from brax.training.agents.ppo import train as ppo
 from myosuite.envs.myo.myobase.reach_v0_mjx import ReachEnvV0
 
 
+jax.config.update('jax_default_matmul_precision', jax.lax.Precision.HIGH)
+
 model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
 # target_reach_range = {
 #     "IFtip": jp.array([[0.2, 0.05, 0.20], [0.2, 0.05, 0.20]]),
