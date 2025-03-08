@@ -16,7 +16,7 @@ from brax.training.agents.ppo import train as ppo
 from myosuite.envs.myo.myobase.reach_v0_mjx import ReachEnvV0
 
 
-jax.config.update('jax_default_matmul_precision', jax.lax.Precision.HIGH)
+jax.config.update('jax_default_matmul_precision', jax.lax.Precision.highest)
 
 model_path = "myosuite/simhive/myo_sim/finger/myofinger_v0.xml"
 # target_reach_range = {
