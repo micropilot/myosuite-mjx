@@ -15,12 +15,11 @@ model.eval()
 env = gym.make('myoFingerReachRandom-v0').unwrapped
 print (env.action_space)
 
-state, _ = env.reset()
-print("State:", state)
+obs, _ = env.reset()
 
 for _ in range(32):
-    state = torch.tensor(state, dtype=torch.float32)
-    action = model(state)
+    obs = torch.tensor(obs, dtype=torch.float32)
+    action = model(obs)
     action = action.detach().numpy()
     obs, rew, done, _, info = env.step(action)
     env.mj_render()
