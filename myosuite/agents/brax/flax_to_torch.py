@@ -31,10 +31,14 @@ class TorchModel(torch.nn.Module):
             kernel = layer_params['kernel'].T
             bias = layer_params['bias']
             
+            # Ensure the kernel and bias are writable
+            kernel = np.copy(kernel)
+            bias = np.copy(bias)
+            
             # Create a linear layer
             layer = torch.nn.Linear(len(kernel[0]), len(bias))
             
-            # Set the weights and biases
+            # Convert to PyTorch tensors and set as parameters
             layer.weight = torch.nn.Parameter(torch.tensor(kernel, dtype=torch.float32))
             layer.bias = torch.nn.Parameter(torch.tensor(bias, dtype=torch.float32))
             
