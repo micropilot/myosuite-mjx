@@ -3,17 +3,22 @@ import os
 os.environ["JAX_CHECK_TRACER_LEAKS"] = "true"
 import functools
 # import wandb 
-import mediapy as media
+from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 
 from datetime import datetime
 import jax
 from jax import numpy as jp
+import torch 
 
 from brax import envs
 from brax.io import model
 from brax.training.agents.ppo import train as ppo
 
 from myosuite.envs.myo.myobase.reach_v0_mjx import ReachEnvV0
+from myosuite.utils import gym
+from myosuite.agents.brax.flax_to_torch import (
+    TorchModel
+)
 
 
 jax.config.update('jax_default_matmul_precision', 'highest')
@@ -34,7 +39,6 @@ env = envs.get_environment(
     env_name, model_path=model_path, target_reach_range=target_reach_range
 )
 
-print (env.action_size)
 
 times = [datetime.now()]
 name = "brax_ppo_reach_random_v0"
@@ -54,7 +58,32 @@ def progress(num_steps, metrics):
 def policy_params(current_step, make_policy, params):
     # Save the model with the specified filename format
     model_filename = f"{name}_brax_ppo_{current_step}"
-    model.save_params(f'policies/{model_filename}', params)
+
+    net = TorchModel(params)
+    net.eval()
+
+    env = gym.make('myoFingerReachRandom-v0').unwrapped
+
+    obs, _ = env.reset()
+
+    frames = []
+    for _ in range(32):
+        obs = torch.tensor(obs, dtype=torch.float32)
+        action = net(obs)
+        action = action.detach().numpy()
+        obs, rew, done, _, info = env.step(action)
+        frame = env.sim.renderer.render_offscreen(
+            width=480, 
+            height=480, 
+            camera_id=-1
+        )
+        frames.append(frame)
+        if done:
+            break
+
+    clip = ImageSequenceClip(frames, fps=30)
+    clip.write_videofile(f'policies/{model_filename}.mp4')
+    # wandb.log({"evaluation_video": wandb.Video(f'policies/{model_filename}.mp4', format="mp4")})
 
 
 
