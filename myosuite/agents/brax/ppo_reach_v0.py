@@ -89,7 +89,7 @@ def policy_params(current_step, make_policy, params):
 
 # Define a configuration dictionary
 config = {
-    "num_timesteps": 100_000_000,
+    "num_timesteps": 20_000_000,
     "num_evals": 1000,
     "reward_scaling": 1,
     "episode_length": 32,
