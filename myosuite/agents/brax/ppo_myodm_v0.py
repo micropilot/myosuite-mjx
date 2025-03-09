@@ -46,9 +46,9 @@ weighted_reward_keys = {
     "penalty": -2,
 }
 
-envs.register_environment("MyoHandAirplaneFly-v0", TrackEnv)
+envs.register_environment("MyoHandAirplaneRandom-v0", TrackEnv)
 
-env_name = "MyoHandAirplaneFly-v0"
+env_name = "MyoHandAirplaneRandom-v0"
 env = envs.get_environment(
     env_name, 
     model_path=model_path, 
@@ -80,7 +80,7 @@ def policy_params(current_step, make_policy, params):
     net = TorchModel(params)
     net.eval()
 
-    env = gym.make('MyoHandAirplaneFly-v0').unwrapped
+    env = gym.make('MyoHandAirplaneRandom-v0').unwrapped
 
     obs, _ = env.reset()
 
@@ -124,7 +124,7 @@ config = {
 }
 
 run = wandb.init(
-    project="MyoHandAirplaneFly-v0",
+    project="MyoHandAirplaneRandom-v0",
     config=config,
     name=name,
 )
