@@ -2,7 +2,7 @@ import os
 
 os.environ["JAX_CHECK_TRACER_LEAKS"] = "true"
 import functools
-# import wandb 
+import wandb 
 from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 
 from datetime import datetime
@@ -70,7 +70,7 @@ def progress(num_steps, metrics):
     for key, value in metrics.items():
         print(f"  {key}: {value}")
 
-    # wandb.log(step=num_steps, data=metrics)
+    wandb.log(step=num_steps, data=metrics)
 
 
 def policy_params(current_step, make_policy, params):
@@ -101,33 +101,33 @@ def policy_params(current_step, make_policy, params):
 
     clip = ImageSequenceClip(frames, fps=30)
     clip.write_videofile(f'policies/{model_filename}.mp4')
-    # wandb.log({"evaluation_video": wandb.Video(f'policies/{model_filename}.mp4', format="mp4")})
+    wandb.log({"evaluation_video": wandb.Video(f'policies/{model_filename}.mp4', format="mp4")})
 
 
 # Define a configuration dictionary
 config = {
-    "num_timesteps": 100_000,
+    "num_timesteps": 100_000_000,
     "num_evals": 1000,
     "reward_scaling": 1,
     "episode_length": 32,
     "normalize_observations": True,
     "action_repeat": 1,
     "unroll_length": 5,
-    "num_minibatches": 8,
+    "num_minibatches": 32,
     "num_updates_per_batch": 4,
     "discounting": 0.97,
     "learning_rate": 3e-4,
     "entropy_cost": 1e-2,
-    "num_envs": 32,
-    "batch_size": 16,
+    "num_envs": 1024,
+    "batch_size": 512,
     "seed": 1,
 }
 
-# run = wandb.init(
-#     project="MyoHandAirplaneRandom-v0",
-#     config=config,
-#     name=name,
-# )
+run = wandb.init(
+    project="MyoHandAirplaneRandom-v0",
+    config=config,
+    name=name,
+)
 
 # Use the config dictionary in functools.partial
 train_fn = functools.partial(ppo.train, **config)
