@@ -3,17 +3,23 @@ import os
 os.environ["JAX_CHECK_TRACER_LEAKS"] = "true"
 import functools
 import wandb 
-import mediapy as media
+from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 
 from datetime import datetime
 import jax
 from jax import numpy as jp
+import torch 
 
 from brax import envs
 from brax.io import model
 from brax.training.agents.ppo import train as ppo
 
 from myosuite.envs.myo.myodm.myodm_v0_mjx import TrackEnv
+
+from myosuite.utils import gym
+from myosuite.agents.brax.flax_to_torch import (
+    TorchModel
+)
 
 
 jax.config.update('jax_default_matmul_precision', 'highest')
@@ -54,7 +60,7 @@ env = envs.get_environment(
 
 
 times = [datetime.now()]
-
+name = "brax_ppo_myohand_airplane_v0"
 
 def progress(num_steps, metrics):
     times.append(datetime.now())
@@ -65,6 +71,37 @@ def progress(num_steps, metrics):
         print(f"  {key}: {value}")
 
     wandb.log(step=num_steps, data=metrics)
+
+
+def policy_params(current_step, make_policy, params):
+    # Save the model with the specified filename format
+    model_filename = f"{name}_brax_ppo_{current_step}"
+
+    net = TorchModel(params)
+    net.eval()
+
+    env = gym.make('MyoHandAirplaneFly-v0').unwrapped
+
+    obs, _ = env.reset()
+
+    frames = []
+    for _ in range(32):
+        obs = torch.tensor(obs, dtype=torch.float32)
+        action = net(obs)
+        action = action.detach().numpy()
+        obs, rew, done, _, info = env.step(action)
+        frame = env.sim.renderer.render_offscreen(
+            width=480, 
+            height=480, 
+            camera_id=-1
+        )
+        frames.append(frame)
+        if done:
+            break
+
+    clip = ImageSequenceClip(frames, fps=30)
+    clip.write_videofile(f'policies/{model_filename}.mp4')
+    wandb.log({"evaluation_video": wandb.Video(f'policies/{model_filename}.mp4', format="mp4")})
 
 
 # Define a configuration dictionary
@@ -89,14 +126,14 @@ config = {
 run = wandb.init(
     project="MyoHandAirplaneFly-v0",
     config=config,
-    name="brax_ppo_v0",
+    name=name,
 )
 
 # Use the config dictionary in functools.partial
 train_fn = functools.partial(ppo.train, **config)
 
 
-make_inference_fn, params, _ = train_fn(environment=env, progress_fn=progress)
+make_inference_fn, params, _ = train_fn(environment=env, progress_fn=progress, policy_params_fn=policy_params)
 
 print(f"time to jit: {times[1] - times[0]}")
 print(f"time to train: {times[-1] - times[1]}")
@@ -104,4 +141,4 @@ print(f"time to train: {times[-1] - times[1]}")
 if not os.path.exists("policies"):
     os.makedirs("policies", exist_ok=True)
 
-model.save_params('policies/myohand_airplane_v0_brax_ppo', params)
+model.save_params(f"policies/{name}_final", params)

@@ -124,4 +124,4 @@ print(f"time to train: {times[-1] - times[1]}")
 if not os.path.exists("policies"):
     os.makedirs("policies", exist_ok=True)
 
-model.save_params(f"policies/{name}_brax_ppo_final", params)
+model.save_params(f"policies/{name}_final", params)
