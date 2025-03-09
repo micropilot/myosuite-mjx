@@ -85,7 +85,7 @@ def policy_params(current_step, make_policy, params):
     obs, _ = env.reset()
 
     frames = []
-    for _ in range(32):
+    for _ in range(100):
         obs = torch.tensor(obs, dtype=torch.float32)
         action = net(obs)
         action = action.detach().numpy()
@@ -109,7 +109,7 @@ config = {
     "num_timesteps": 100_000_000,
     "num_evals": 1000,
     "reward_scaling": 1,
-    "episode_length": 32,
+    "episode_length": 100,
     "normalize_observations": True,
     "action_repeat": 1,
     "unroll_length": 5,
