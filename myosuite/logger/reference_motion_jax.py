@@ -132,7 +132,7 @@ class ReferenceMotion:
         """
         if isinstance(reference_data, str):
             if reference_data.endswith("npz"):
-                reference = {k: v for k, v in jp.load(reference_data).items()}
+                reference = {k: jp.array(v) for k, v in jp.load(reference_data).items()}
             elif reference_data.endswith(("pkl", "pickle")):
                 with open(reference_data, "rb") as data:
                     reference = pickle.load(data)
@@ -166,47 +166,55 @@ class ReferenceMotion:
         Find the timeslot interval for the provided time in the reference motion.
         """
         time = jp.around(time, _TIME_PRECISION)
-        if self.type == ReferenceType.FIXED:
-            return 0, 0
-        if self.motion_extrapolation and time >= self.reference["time"][-1]:
-            return self.horizon - 1, self.horizon - 1
-        assert (
-            time <= self.reference["time"][-1]
-        ), f"Time {time} exceeds max reference duration {self.reference['time'][-1]}"
+        
+        # Use jax.lax.cond to handle the conditional logic
+        def fixed_case(_):
+            return (0, 0)
 
-        # search locally for index
-        if time == self.reference["time"][self.index_cache]:
-            return (self.index_cache, self.index_cache)
+        def extrapolation_case(_):
+            return (self.horizon - 1, self.horizon - 1)
 
-        elif self.index_cache < (self.horizon - 1):
-            if time == self.reference["time"][self.index_cache + 1]:
-                # print(f"next match: {time}")
-                self.index_cache += 1
+        def normal_case(_):
+            # Use jax.lax.cond for conditional logic
+            def check_current_index(_):
                 return (self.index_cache, self.index_cache)
 
-            elif (
-                time > self.reference["time"][self.index_cache]
-                and time < self.reference["time"][self.index_cache + 1]
-            ):
-                return (self.index_cache, self.index_cache + 1)
-            else:
-                print(
-                    f"No result using hueristic search. Attempting sort match: {time}"
+            def check_next_index(_):
+                return (self.index_cache + 1, self.index_cache + 1)
+
+            def search_index(_):
+                new_index = jp.searchsorted(self.reference["time"], time, side="right") - 1
+                return jax.lax.cond(
+                    time == self.reference["time"][new_index],
+                    lambda _: (new_index, new_index),
+                    lambda _: (new_index, new_index + 1),
+                    operand=None
                 )
-                self.index_cache = (
-                    jp.searchsorted(self.reference["time"], time, side="right") - 1
-                )
-                if time == self.reference["time"][self.index_cache]:
-                    return (self.index_cache, self.index_cache)
-                elif (
-                    time > self.reference["time"][self.index_cache]
-                    and time < self.reference["time"][self.index_cache + 1]
-                ):
-                    return (self.index_cache, self.index_cache + 1)
-                else:
-                    raise ValueError("We shouldn't be in this condition")
-        else:
-            raise ValueError("We shouldn't be in this condition")
+
+            return jax.lax.cond(
+                time == self.reference["time"][self.index_cache],
+                check_current_index,
+                lambda _: jax.lax.cond(
+                    (self.index_cache < (self.horizon - 1)) & (time == self.reference["time"][self.index_cache + 1]),
+                    check_next_index,
+                    search_index,
+                    operand=None
+                ),
+                operand=None
+            )
+
+        # Use jax.lax.cond to handle the top-level conditional logic
+        return jax.lax.cond(
+            self.type == ReferenceType.FIXED,
+            fixed_case,
+            lambda _: jax.lax.cond(
+                self.motion_extrapolation & (time >= self.reference["time"][-1]),
+                extrapolation_case,
+                normal_case,
+                operand=None
+            ),
+            operand=None
+        )
 
     def reset(self):
         self.index_cache = 0
@@ -251,7 +259,9 @@ class ReferenceMotion:
             )
         elif self.type == ReferenceType.TRACK:
             ind, ind_next = self.find_timeslot_in_reference(time=time)
-            if ind == ind_next:
+            jax.debug.print("MJX ind {}, ind_next {}", ind, ind_next)
+            # Use jax.lax.cond to handle the conditional logic
+            def exact_frame_case(_):
                 # Exact frame[time] found for reference
                 robot_ref = (
                     self.reference["robot"][ind]
@@ -268,20 +278,22 @@ class ReferenceMotion:
                     if self.reference["object"] is None
                     else self.reference["object"][ind]
                 )
-            else:
+                return robot_ref, robot_vel_ref, object_ref
+
+            def interpolate_case(_):
                 # Linearly interpolate between frames to get references
-                blend = time - self.reference["time"][ind] / (
+                blend = (time - self.reference["time"][ind]) / (
                     self.reference["time"][ind_next] - self.reference["time"][ind]
                 )
                 # robot motion
                 if self.robot_horizon > 1:
-                    robot_ref = (1.0 - blend) ** self.reference["robot"][
+                    robot_ref = (1.0 - blend) * self.reference["robot"][
                         ind
                     ] + blend * self.reference["robot"][ind_next]
                     robot_vel_ref = (
                         None
                         if self.reference["robot_vel"] is None
-                        else (1.0 - blend) ** self.reference["robot_vel"][ind]
+                        else (1.0 - blend) * self.reference["robot_vel"][ind]
                         + blend * self.reference["robot_vel"][ind_next]
                     )
                 else:
@@ -301,6 +313,15 @@ class ReferenceMotion:
                     ] + blend * self.reference["object"][ind_next]
                 else:
                     object_ref = self.reference["object"][0]
+
+                return robot_ref, robot_vel_ref, object_ref
+
+            robot_ref, robot_vel_ref, object_ref = jax.lax.cond(
+                ind == ind_next,
+                exact_frame_case,
+                interpolate_case,
+                operand=None
+            )
 
         return ReferenceStruct(
             time=time,

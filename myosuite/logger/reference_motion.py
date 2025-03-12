@@ -262,6 +262,7 @@ class ReferenceMotion:
             )
         elif self.type == ReferenceType.TRACK:
             ind, ind_next = self.find_timeslot_in_reference(time=time)
+            print ("Mujoco ind, ind_next", ind, ind_next)
             if ind == ind_next:
                 # Exact frame[time] found for reference
                 robot_ref = (
