@@ -120,7 +120,7 @@ config = {
     "discounting": 0.97,
     "learning_rate": 3e-4,
     "entropy_cost": 1e-2,
-    "num_envs": 1024,
+    "num_envs": 512,
     "batch_size": 512,
     "seed": 1,
 }
