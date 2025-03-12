@@ -30,7 +30,7 @@ class TrackEnv(BaseV0):
 
     DEFAULT_OBS_KEYS = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"]
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
-        "pose": 0.0,  # 1.0,
+        "pose": 1.0,
         "object": 1.0,
         "bonus": 1.0,
         "penalty": -2,

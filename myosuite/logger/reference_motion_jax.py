@@ -259,7 +259,6 @@ class ReferenceMotion:
             )
         elif self.type == ReferenceType.TRACK:
             ind, ind_next = self.find_timeslot_in_reference(time=time)
-            jax.debug.print("MJX ind {}, ind_next {}", ind, ind_next)
             # Use jax.lax.cond to handle the conditional logic
             def exact_frame_case(_):
                 # Exact frame[time] found for reference

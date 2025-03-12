@@ -46,14 +46,16 @@ weighted_reward_keys = {
     "penalty": -2,
 }
 
-envs.register_environment("MyoHandAirplaneRandom-v0", TrackEnv)
+envs.register_environment("MyoHandAirplaneFly-v0", TrackEnv)
 
-env_name = "MyoHandAirplaneRandom-v0"
+curr_dir = os.path.dirname(os.path.abspath(__file__))
+env_name = "MyoHandAirplaneFly-v0"
 env = envs.get_environment(
     env_name, 
     model_path=model_path, 
     object_name=object_name,
-    reference=reference,
+    # reference=reference,
+    reference=f"{curr_dir}/../../envs/myo/myodm/data/MyoHand_airplane_fly1.npz",
     obs_keys=obs_keys,
     weighted_reward_keys=weighted_reward_keys,
 )
@@ -80,7 +82,7 @@ def policy_params(current_step, make_policy, params):
     net = TorchModel(params)
     net.eval()
 
-    env = gym.make('MyoHandAirplaneRandom-v0').unwrapped
+    env = gym.make('MyoHandAirplaneFly-v0').unwrapped
 
     obs, _ = env.reset()
 
@@ -109,10 +111,10 @@ config = {
     "num_timesteps": 100_000_000,
     "num_evals": 1000,
     "reward_scaling": 1,
-    "episode_length": 100,
+    "episode_length": 50,
     "normalize_observations": True,
     "action_repeat": 1,
-    "unroll_length": 5,
+    "unroll_length": 50,
     "num_minibatches": 32,
     "num_updates_per_batch": 4,
     "discounting": 0.97,
@@ -124,7 +126,7 @@ config = {
 }
 
 run = wandb.init(
-    project="MyoHandAirplaneRandom-v0",
+    project="MyoHandAirplaneFly-v0",
     config=config,
     name=name,
 )
