@@ -48,7 +48,7 @@ class TrackEnv(BaseV0):
         motion_extrapolation: bool = True,
         obs_keys: list = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"],
         weighted_reward_keys: dict = {
-            "pose": 0.0,  # 1.0,
+            "pose": 1.0,
             "object": 1.0,
             "bonus": 1.0,
             "penalty": -2,
@@ -73,7 +73,7 @@ class TrackEnv(BaseV0):
         # PRE-GRASP
         self.obj_err_scale = 50
         self.base_err_scale = 40
-        self.lift_bonus_mag = 1  # 2.5
+        self.lift_bonus_mag = 2.5
 
         # DEEPMIMIC
         self.qpos_reward_weight = 0.35

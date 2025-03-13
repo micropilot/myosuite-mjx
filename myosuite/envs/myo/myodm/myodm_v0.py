@@ -123,7 +123,7 @@ class TrackEnv(BaseV0):
         # PRE-GRASP
         self.obj_err_scale = 50
         self.base_err_scale = 40
-        self.lift_bonus_mag = 1  # 2.5
+        self.lift_bonus_mag = 2.5
 
         # DEEPMIMIC
         self.qpos_reward_weight = 0.35
