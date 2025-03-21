@@ -8,16 +8,16 @@ from myosuite.agents.brax.flax_to_torch import (
     TorchModel
 )
 
-params = model.load_params('policies/brax')
+params = model.load_params('policies/brax_ppo_myohand_airplane_v0_final')
 model = TorchModel(params)
 model.eval()
 
-env = gym.make('myoFingerReachRandom-v0').unwrapped
+env = gym.make('MyoHandAirplaneFly-v0').unwrapped
 print (env.action_space)
 
 obs, _ = env.reset()
 
-for _ in range(32):
+for _ in range(100):
     obs = torch.tensor(obs, dtype=torch.float32)
     action = model(obs)
     action = action.detach().numpy()

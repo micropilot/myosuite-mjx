@@ -262,6 +262,7 @@ class ReferenceMotion:
             )
         elif self.type == ReferenceType.TRACK:
             ind, ind_next = self.find_timeslot_in_reference(time=time)
+            print ("Mujoco reference motion: ", ind, ind_next)
             if ind == ind_next:
                 # Exact frame[time] found for reference
                 robot_ref = (
@@ -312,7 +313,6 @@ class ReferenceMotion:
                         if self.reference["robot_vel"] is None
                         else self.reference["robot_vel"][0]
                     )
-
                 # object motion
                 if self.reference["object"] is None:
                     object_ref = None

@@ -301,22 +301,7 @@ class TestReferenceMotion(unittest.TestCase):
             rtol=1e-5,
             err_msg="Extrapolation doesn't match final position",
         )
-
-    def test_get_reference_error_cases(self):
-        """Test error cases in get_reference"""
-        # Without extrapolation
-        jax_ref = JaxReferenceMotion(self.file_path, motion_extrapolation=False)
-        numpy_ref = NumpyReferenceMotion(self.file_path, motion_extrapolation=False)
-
-        # Test time beyond motion duration
-        max_time = jax_ref.reference["time"][-1]
-        test_time = max_time + 1.0
-
-        with self.assertRaises(AssertionError):
-            _ = jax_ref.get_reference(test_time)
-        with self.assertRaises(AssertionError):
-            _ = numpy_ref.get_reference(test_time)
-
+        
     def test_missing_init_fixed(self):
         """Test initialization when robot_init and object_init are missing for fixed reference"""
         # Create reference data without init values

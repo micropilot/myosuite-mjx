@@ -281,18 +281,19 @@ class ReferenceMotion:
 
             def interpolate_case(_):
                 # Linearly interpolate between frames to get references
-                blend = (time - self.reference["time"][ind]) / (
+                blend = time - self.reference["time"][ind] / (
                     self.reference["time"][ind_next] - self.reference["time"][ind]
                 )
+
                 # robot motion
                 if self.robot_horizon > 1:
-                    robot_ref = (1.0 - blend) * self.reference["robot"][
+                    robot_ref = (1.0 - blend) ** self.reference["robot"][
                         ind
                     ] + blend * self.reference["robot"][ind_next]
                     robot_vel_ref = (
                         None
                         if self.reference["robot_vel"] is None
-                        else (1.0 - blend) * self.reference["robot_vel"][ind]
+                        else (1.0 - blend) ** self.reference["robot_vel"][ind]
                         + blend * self.reference["robot_vel"][ind_next]
                     )
                 else:
@@ -302,7 +303,6 @@ class ReferenceMotion:
                         if self.reference["robot_vel"] is None
                         else self.reference["robot_vel"][0]
                     )
-
                 # object motion
                 if self.reference["object"] is None:
                     object_ref = None
