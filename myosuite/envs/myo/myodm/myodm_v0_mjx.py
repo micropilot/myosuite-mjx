@@ -286,7 +286,8 @@ class TrackEnv(BaseV0):
         )
 
         # get real values from physics object
-        info["curr_obj_com"] = pipeline_state.xipos[self.object_bid].copy()
+        # info["curr_obj_com"] = pipeline_state.xipos[self.object_bid].copy()
+        info["curr_obj_com"] = pipeline_state.qpos[self.ref.robot_dim : self.ref.robot_dim + 3]
         info["curr_obj_rot"] = mat2quat(pipeline_state.ximat[self.object_bid])
 
         info["wrist_err"] = pipeline_state.xipos[self.wrist_bid].copy()
