@@ -342,19 +342,19 @@ class TrackEnv(BaseV0):
                 if self.norm2(obs_dict["obj_com_err"]) >= self.obj_fail_thresh**2
                 else False
             )
-            # wrist too far from object
-            base_term = (
-                True
-                if self.norm2(obs_dict["base_error"]) >= self.base_fail_thresh**2
-                else False
-            )
+            # # wrist too far from object
+            # base_term = (
+            #     True
+            #     if self.norm2(obs_dict["base_error"]) >= self.base_fail_thresh**2
+            #     else False
+            # )
 
-        if self.TermPose:  # termination on posture
-            qpos_term = (
-                True
-                if self.norm2(obs_dict["hand_qpos_err"]) >= self.qpos_fail_thresh
-                else False
-            )
+        # if self.TermPose:  # termination on posture
+        #     qpos_term = (
+        #         True
+        #         if self.norm2(obs_dict["hand_qpos_err"]) >= self.qpos_fail_thresh
+        #         else False
+        #     )
 
         result = (
             obj_term or qpos_term or base_term

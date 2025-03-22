@@ -20,8 +20,8 @@ class TorchModel(torch.nn.Module):
         self.std = torch.tensor(np.array(normalization_params.std), dtype=torch.float32)
         
         # Extract the parameters dictionary
-        params_dict = network_params.policy['params']
-        # params_dict = network_params['params']
+        # params_dict = network_params.policy['params']
+        params_dict = network_params['params']
         
         # Create a ModuleList to hold the layers
         self.layers = torch.nn.ModuleList()

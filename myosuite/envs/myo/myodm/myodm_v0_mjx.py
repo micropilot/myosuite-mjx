@@ -105,9 +105,7 @@ class TrackEnv(BaseV0):
             0.0  # Make all geoms invisible
         )
 
-        ipos = self.sys.mj_model.body_ipos[self.object_bid]
-        pos = self.sys.mj_model.body_pos[self.object_bid]
-        self.lift_z = (ipos + pos)[2] + self.lift_bonus_thresh
+        self.lift_z = self.sys.xipos[2] + self.lift_bonus_thresh
 
         super()._setup(
             obs_keys=obs_keys, weighted_reward_keys=weighted_reward_keys, **kwargs
