@@ -23,10 +23,10 @@ for _ in range(1000):
     action = action.detach().numpy()
     obs, rew, done, _, info = env.step(action)
     env.mj_render()
-    time.sleep(0.01)
+    time.sleep(0.5)
     print (rew, done)
-    # if done:
-    #     break
+    if done:
+        break
 
     
 
