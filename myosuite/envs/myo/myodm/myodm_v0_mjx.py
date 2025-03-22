@@ -51,7 +51,7 @@ class TrackEnv(BaseV0):
             # "pose": 1.0,
             "object": 1.0,
             "bonus": 1.0,
-            "penalty": -2,
+            # "penalty": -2,
         },
         terminate_obj_fail: bool = True,
         terminate_pose_fail: bool = False,
@@ -201,7 +201,7 @@ class TrackEnv(BaseV0):
         # base_reward = jp.exp(-self.base_err_scale * base_error)
 
         obj_term = jp.where(
-            self.TermObj & (self.norm2(info["obj_com_err"]) >= self.obj_fail_thresh**2),
+            self.norm2(info["obj_com_err"]) >= self.obj_fail_thresh**2,
             1.0,
             0.0,
         )
@@ -227,7 +227,7 @@ class TrackEnv(BaseV0):
             # "pose": pose_reward + vel_reward,
             "object": obj_reward, #+ base_reward,
             "bonus": float(self.lift_bonus_mag) * lift_bonus,
-            "penalty": done,
+            # "penalty": done,
         }
 
         reward = jp.sum(

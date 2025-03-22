@@ -41,9 +41,9 @@ reference = {
 obs_keys = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"]
 weighted_reward_keys = {
     # "pose": 0.0,
-    "object": 10.0,
-    "bonus": 1.0,
-    "penalty": -2,
+    "object": 1.0,
+    "bonus": 5.0,
+    # "penalty": -2,
 }
 
 envs.register_environment("MyoHandAirplaneFly-v0", TrackEnv)
