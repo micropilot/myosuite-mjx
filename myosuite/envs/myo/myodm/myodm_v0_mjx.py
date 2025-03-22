@@ -48,7 +48,7 @@ class TrackEnv(BaseV0):
         motion_extrapolation: bool = True,
         obs_keys: list = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"],
         weighted_reward_keys: dict = {
-            "pose": 1.0,
+            # "pose": 1.0,
             "object": 1.0,
             "bonus": 1.0,
             "penalty": -2,
@@ -188,44 +188,46 @@ class TrackEnv(BaseV0):
         )
 
         # calculate reward terms
-        qpos_reward = jp.exp(-self.qpos_err_scale * self.norm2(info["hand_qpos_err"]))
-        qvel_reward = jp.where(
-            info["hand_qvel_err"] is None,
-            0.0,
-            jp.exp(-self.qvel_err_scale * self.norm2(info["hand_qvel_err"])),
-        )
+        # qpos_reward = jp.exp(-self.qpos_err_scale * self.norm2(info["hand_qpos_err"]))
+        # qvel_reward = jp.where(
+        #     info["hand_qvel_err"] is None,
+        #     0.0,
+        #     jp.exp(-self.qvel_err_scale * self.norm2(info["hand_qvel_err"])),
+        # )
 
         # weight and sum individual reward terms
-        pose_reward = self.qpos_reward_weight * qpos_reward
-        vel_reward = self.qvel_reward_weight * qvel_reward
+        # pose_reward = self.qpos_reward_weight * qpos_reward
+        # vel_reward = self.qvel_reward_weight * qvel_reward
 
-        base_error = jp.sqrt(self.norm2(info["base_error"]))
-        base_reward = jp.exp(-self.base_err_scale * base_error)
+        # base_error = jp.sqrt(self.norm2(info["base_error"]))
+        # base_reward = jp.exp(-self.base_err_scale * base_error)
 
         obj_term = jp.where(
             self.TermObj & (self.norm2(info["obj_com_err"]) >= self.obj_fail_thresh**2),
             1.0,
             0.0,
         )
-        base_term = jp.where(
-            self.TermObj & (self.norm2(info["base_error"]) >= self.base_fail_thresh**2),
-            1.0,
-            0.0,
-        )
-        qpos_term = jp.where(
-            self.TermPose
-            & (self.norm2(info["hand_qpos_err"]) >= self.qpos_fail_thresh),
-            1.0,
-            0.0,
-        )
+        # base_term = jp.where(
+        #     self.TermObj & (self.norm2(info["base_error"]) >= self.base_fail_thresh**2),
+        #     1.0,
+        #     0.0,
+        # )
+        # qpos_term = jp.where(
+        #     self.TermPose
+        #     & (self.norm2(info["hand_qpos_err"]) >= self.qpos_fail_thresh),
+        #     1.0,
+        #     0.0,
+        # )
 
-        done = jp.where(
-            jp.logical_or(jp.logical_or(obj_term, qpos_term), base_term), 1.0, 0.0
-        )
+        # done = jp.where(
+        #     jp.logical_or(jp.logical_or(obj_term, qpos_term), base_term), 1.0, 0.0
+        # )
+
+        done = obj_term
 
         metrics = {
-            "pose": pose_reward + vel_reward,
-            "object": obj_reward + base_reward,
+            # "pose": pose_reward + vel_reward,
+            "object": obj_reward, #+ base_reward,
             "bonus": float(self.lift_bonus_mag) * lift_bonus,
             "penalty": done,
         }
@@ -286,8 +288,7 @@ class TrackEnv(BaseV0):
         )
 
         # get real values from physics object
-        # info["curr_obj_com"] = pipeline_state.xipos[self.object_bid].copy()
-        info["curr_obj_com"] = pipeline_state.qpos[self.ref.robot_dim : self.ref.robot_dim + 3]
+        info["curr_obj_com"] = pipeline_state.xipos[self.object_bid].copy()
         info["curr_obj_rot"] = mat2quat(pipeline_state.ximat[self.object_bid])
 
         info["wrist_err"] = pipeline_state.xipos[self.wrist_bid].copy()
