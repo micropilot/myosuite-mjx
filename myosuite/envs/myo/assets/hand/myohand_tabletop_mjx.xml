@@ -18,7 +18,7 @@
     </actuator>
 
     <include file="../../../../simhive/myo_sim/hand/assets/myohand_assets_mjx.xml"/>
-    <include file="../../../../simhive/furniture_sim/simpleTable/simpleTable_asset.xml"/>
+    <!-- <include file="../../../../simhive/furniture_sim/simpleTable/simpleTable_asset.xml"/> -->
     <compiler angle="radian" meshdir="../../../../simhive/myo_sim/" texturedir="../../../../simhive/myo_sim/"/>
     <size njmax='1000' nconmax='1000'/>
 
@@ -50,9 +50,9 @@
         </body>
 
         <!-- simple Table -->
-        <body pos='0 0 -.76'>
+        <!-- <body pos='0 0 -.76'>
             <include file="../../../../simhive/furniture_sim/simpleTable/simpleGraniteTable_body_mjx.xml"/>
-        </body>
+        </body> -->
 
         <!-- tasks details added here via include-->
         <site name='target' type='sphere' size='.03' pos='0 0 0.001' group='1' rgba='.1 .8 .2 .4'/>

@@ -17,7 +17,7 @@ print (env.action_space)
 
 obs, _ = env.reset()
 
-for _ in range(100):
+for _ in range(1000):
     obs = torch.tensor(obs, dtype=torch.float32)
     action = model(obs)
     action = action.detach().numpy()
@@ -25,8 +25,8 @@ for _ in range(100):
     env.mj_render()
     time.sleep(0.01)
     print (rew, done)
-    if done:
-        break
+    # if done:
+    #     break
 
     
 

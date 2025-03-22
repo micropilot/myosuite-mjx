@@ -570,7 +570,7 @@ def register_myohand_object_trackref(task_name, object_name, motion_path=None):
         entry_point="myosuite.envs.myo.myodm.myodm_v0:TrackEnv",
         max_episode_steps=75,  # 50steps*40Skip*2ms = 4s
         kwargs={
-            "model_path": "/../assets/hand/myohand_object.xml",
+            "model_path": "/../assets/hand/myohand_object_mjx.xml",
             "object_name": object_name,
             "reference": curr_dir + "/data/" + motion_path,
         },

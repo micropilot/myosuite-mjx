@@ -111,7 +111,7 @@ config = {
     "num_timesteps": 100_000_000,
     "num_evals": 1000,
     "reward_scaling": 1,
-    "episode_length": 50,
+    "episode_length": 100,
     "normalize_observations": True,
     "action_repeat": 1,
     "unroll_length": 50,
