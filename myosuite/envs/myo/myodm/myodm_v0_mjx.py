@@ -199,8 +199,8 @@ class TrackEnv(BaseV0):
         # pose_reward = self.qpos_reward_weight * qpos_reward
         # vel_reward = self.qvel_reward_weight * qvel_reward
 
-        # base_error = jp.sqrt(self.norm2(info["base_error"]))
-        # base_reward = jp.exp(-self.base_err_scale * base_error)
+        base_error = jp.sqrt(self.norm2(info["base_error"]))
+        base_reward = jp.exp(-self.base_err_scale * base_error)
 
         obj_term = jp.where(
             self.norm2(info["obj_com_err"]) >= self.obj_fail_thresh**2,
@@ -227,7 +227,7 @@ class TrackEnv(BaseV0):
 
         metrics = {
             # "pose": pose_reward + vel_reward,
-            "object": obj_reward, #+ base_reward,
+            "object": obj_reward + base_reward,
             "bonus": float(self.lift_bonus_mag) * lift_bonus,
             # "penalty": done,
         }
