@@ -43,6 +43,7 @@ weighted_reward_keys = {
     "pose": 1.0,
     "object": 1.0,
     "bonus": 2.0,
+    "proximity": 2.0,
     # "penalty": -2,
 }
 

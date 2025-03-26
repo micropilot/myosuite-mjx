@@ -51,6 +51,7 @@ class TrackEnv(BaseV0):
             "pose": 1.0,
             "object": 1.0,
             "bonus": 1.0,
+            "proximity": 2.0,
             # "penalty": -2,
         },
         terminate_obj_fail: bool = True,
@@ -91,6 +92,9 @@ class TrackEnv(BaseV0):
         # TERMINATIONS FOR MIMIC
         self.qpos_fail_thresh = 0.75
         self.TermPose = terminate_pose_fail
+
+        # Add proximity reward scale
+        self.proximity_err_scale = 30
         ##########################################
 
         self.object_bid = mujoco.mj_name2id(
@@ -225,10 +229,15 @@ class TrackEnv(BaseV0):
 
         done = obj_term
 
+        # Add proximity reward - encourage hand and object to stay close
+        proximity_error = jp.sqrt(self.norm2(info["base_error"]))
+        proximity_reward = jp.exp(-self.proximity_err_scale * proximity_error)
+
         metrics = {
             "pose": pose_reward + vel_reward,
             "object": obj_reward + base_reward,
             "bonus": float(self.lift_bonus_mag) * lift_bonus,
+            "proximity": proximity_reward,
             # "penalty": done,
         }
 
