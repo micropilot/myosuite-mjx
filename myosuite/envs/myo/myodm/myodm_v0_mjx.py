@@ -48,7 +48,7 @@ class TrackEnv(BaseV0):
         motion_extrapolation: bool = True,
         obs_keys: list = ["qp", "qv", "hand_qpos_err", "hand_qvel_err", "obj_com_err"],
         weighted_reward_keys: dict = {
-            # "pose": 1.0,
+            "pose": 1.0,
             "object": 1.0,
             "bonus": 1.0,
             # "penalty": -2,
@@ -188,16 +188,16 @@ class TrackEnv(BaseV0):
         )
 
         # calculate reward terms
-        # qpos_reward = jp.exp(-self.qpos_err_scale * self.norm2(info["hand_qpos_err"]))
-        # qvel_reward = jp.where(
-        #     info["hand_qvel_err"] is None,
-        #     0.0,
-        #     jp.exp(-self.qvel_err_scale * self.norm2(info["hand_qvel_err"])),
-        # )
+        qpos_reward = jp.exp(-self.qpos_err_scale * self.norm2(info["hand_qpos_err"]))
+        qvel_reward = jp.where(
+            info["hand_qvel_err"] is None,
+            0.0,
+            jp.exp(-self.qvel_err_scale * self.norm2(info["hand_qvel_err"])),
+        )
 
         # weight and sum individual reward terms
-        # pose_reward = self.qpos_reward_weight * qpos_reward
-        # vel_reward = self.qvel_reward_weight * qvel_reward
+        pose_reward = self.qpos_reward_weight * qpos_reward
+        vel_reward = self.qvel_reward_weight * qvel_reward
 
         base_error = jp.sqrt(self.norm2(info["base_error"]))
         base_reward = jp.exp(-self.base_err_scale * base_error)
@@ -226,7 +226,7 @@ class TrackEnv(BaseV0):
         done = obj_term
 
         metrics = {
-            # "pose": pose_reward + vel_reward,
+            "pose": pose_reward + vel_reward,
             "object": obj_reward + base_reward,
             "bonus": float(self.lift_bonus_mag) * lift_bonus,
             # "penalty": done,
